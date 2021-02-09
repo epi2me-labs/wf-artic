@@ -1,8 +1,7 @@
-name: epi2melabs-nf-template-workflow
+name: epi2melabs-nf-artic
 channels:
     - bioconda
     - conda-forge
     - defaults
 dependencies:
-    - python==3.6
-    - pysam
+    - artic==1.2.1

@@ -1,8 +1,11 @@
-# Workflow template
+# Artic SARS-CoV-2 Workflow
 
-This repository contains a Nextflow workflow template and associated Docker
-container build. The workflow also supports using conda environments as an
-alternative software isolation method to Docker.
+This repository contains a Nextflow workflow and associated Docker
+container build for performing the Artic SARS-CoV-2 workflow on 
+multiplexed MinION, GridION, and PromethION runs.
+
+The workflow also supports using conda environments as an alternative
+software isolation method to Docker.
 
 ## Quickstart
 
@@ -14,7 +17,7 @@ alternative software isolation method to Docker.
 The Docker container image can be built with the following command:
 
 ```bash
-CONTAINER_TAG=template-workflow
+CONTAINER_TAG=epi2melabs/artic
 docker build \
     -t ${CONTAINER_TAG} -f Dockerfile \
     --build-arg BASEIMAGE=epi2melabs/base-workflow-image:latest \
@@ -25,8 +28,9 @@ The `BASEIMAGE` argument here can be changed to use an alternative image.
 
 ### Running the workflow
 
-The template includes a simple workflow that outputs a file with the lengths
-of sequences contained in a .fastq.gz file.
+The source-code repository contains two datasets to test the workflow:
+a) a source set of files containing reads with a mixture of barcodes and,
+b) a pre-demultiplexed set of .fastq files (derived from the source set).
 
 **Running the workflow with Docker containers**
 
@@ -34,15 +38,15 @@ To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
 
 ```
-OUTPUT=template-workflow
+OUTPUT=workflow-test
 nextflow run workflow.nf \
     -w ${OUTPUT}/workspace \
     -profile standard \
-    --reads test_data/reads.fq.gz \
+    --fastq test_data/sars-samples-mixed/  \
     --out_dir ${OUTPUT}
 ```
 
-The output of the pipeline will be found in `./template-workflow` for the above
+The output of the pipeline will be found in `./workflow-test` for the above
 example. This directory contains the nextflow working directories alongside
 the two primary outputs of the pipeline.
 
@@ -52,12 +56,11 @@ To run the workflow backed by conda environments, simply provide the
 `-profile conda` argument to `nextflow run`.
 
 ```
-# run the pipeline with the test data
-OUTPUT=template-workflow
+OUTPUT=workflow-test
 nextflow run workflow.nf \
     -w ${OUTPUT}/workspace \
     -profile conda \
-    --reads test_data/reads.fq.gz \
+    --fastq test_data/sars-samples-mixed/  \
     --out_dir ${OUTPUT}
 ```
 
