@@ -17,10 +17,10 @@ software isolation method to Docker.
 The Docker container image can be built with the following command:
 
 ```bash
-CONTAINER_TAG=epi2melabs/artic
+CONTAINER_TAG=ontresearch/artic
 docker build \
     -t ${CONTAINER_TAG} -f Dockerfile \
-    --build-arg BASEIMAGE=epi2melabs/base-workflow-image:latest \
+    --build-arg BASEIMAGE=ontresearch/base-workflow-image:v0.1.0 \
     .
 ```
 
