@@ -52,7 +52,7 @@ process maybeDemultiplex {
     for d in os.listdir("$directory"):
         if d.startswith("barcode"):
             for f in os.listdir(os.path.join("$directory", d)):
-                fpath = os.path.join(d, f)
+                fpath = os.path.join("$directory", d, f)
                 try:
                     read = next(pysam.FastxFile(fpath))
                 except Exception as e:
