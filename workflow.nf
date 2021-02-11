@@ -3,6 +3,14 @@
 nextflow.enable.dsl = 2
 
 params.help = ""
+params.out_dir = "output"
+params.prefix = "artic"
+params.min_len = "300"
+params.max_len = "700"
+params.medaka_model = "r941_min_high_g360"
+params.scheme = "SARS-CoV-2/V3"
+
+
 
 if(params.help) {
     log.info ''
@@ -12,11 +20,15 @@ if(params.help) {
     log.info '    nextflow run workflow.nf [options]'
     log.info ''
     log.info 'Script Options: '
-    log.info '    --fastq        DIR     Path to FASTQ directory'
-    log.info '    --out_dir      DIR     Path for output'
-    log.info '    --samples      FILE    (Optional) tab-separated file with columns `barcode`'
-    log.info '                           and `sample_name` indicating correspondence between '
-    log.info '                           barcodes and sample names.'
+    log.info '    --fastq          DIR     Path to FASTQ directory'
+    log.info '    --out_dir        DIR     Path for output'
+    log.info '    --prefix         STR     Output filename prefix'
+    log.info '    --medaka_model   STR     Medaka model name'
+    log.info '    --min_length     INT     Minimum read length'
+    log.info '    --max_length     INT     Maximum read length'
+    log.info '    --samples        FILE    (Optional) tab-separated file with columns `barcode`'
+    log.info '                             and `sample_name` indicating correspondence between '
+    log.info '                             barcodes and sample names.'
     log.info ''
 
     return
@@ -24,29 +36,53 @@ if(params.help) {
 
 
 process maybeDemultiplex {
-    // Check the input path, demultiplex if necessary, emit barcode folders
-    label "artic"
-    cpus 1    
-    input:
-        file reads
-    output:
-        stdout
-
-    """
-    # TODO
-
-    """
-}
-
-process QC {
     label "artic"
     cpus 1
     input:
         file directory
     output:
-        file out_directory
+        file "out_directory"
     """
-    # TODO: anything?
+    #!/usr/bin/env python
+
+    import os
+    import pysam
+
+    found = False
+    for d in os.listdir("$directory"):
+        if d.startswith("barcode"):
+            for f in os.listdir(os.path.join("$directory", d)):
+                try:
+                    read = next(pysam.FastxFile(f))
+                except Exception as e:
+                    print(e)
+                    print("{}/{} was not readable as fastq".format(d, f))
+                    pass
+                else:
+                    print("{}/{} looks like a fastq".format(d, f))
+                    found = True
+                    break
+        if found:
+            break
+    if found:
+        os.symlink("$directory", "out_directory")
+    else:
+        # TODO: run demultiplexing
+        raise RuntimeError("No 'barcode' directories found with valid .fastq")
+    """
+}
+
+
+process preArticQC {
+    label "artic"
+    cpus 1
+    input:
+        file directory
+    output:
+        file "out_directory"
+    """
+    echo $directory
+    ln -s $directory out_directory
     """
 }
 
@@ -58,61 +94,63 @@ process runArtic {
     input:
         file directory
     output:
-        file consensus.fasta
+        file "*.consensus.fasta"
 
     """
-    # TODO - straighten this out
+    echo "=========="
+    echo $directory
+    echo "=========="
     artic guppyplex --skip-quality-check \
-        --min-length $min_len --max-length $max_len \
-        --directory $directory --prefix $prefix >>$log_file 2>&1 \
+        --min-length $params.min_len --max-length $params.max_len \
+        --directory $directory --prefix $params.prefix \
         && echo " - artic guppyplex finished"
+    # the output of the above will be...
+    READFILE=$params.prefix"_"$directory".fastq"
 
-    artic minion --medaka --normalise 200 --threads $threads \
-        --scheme-directory $working_dir/artic-ncov2019/primer_schemes \
-        --read-file $read_file $scheme \
-        --medaka-model $medaka_model \
-        $prefix >>$log_file 2>&1 \
+    artic minion --medaka --normalise 200 --threads $task.cpus \
+        --read-file \$READFILE $params.scheme \
+        --medaka-model $params.medaka_model \
+        $directory \
         && echo " - artic minion finished"
-
-    # TODO: copied from notebook, calculates depth per amplicon pool
-    for i in (1,2):
-        input_bam = "{}.primertrimmed.rg.sorted.bam".format(prefix)
-        tag = "nCoV-2019_{}".format(i)
-        bam = "{}.{}".format(input_bam, tag)
-        if os.path.isfile(input_bam):
-            !samtools view -r $tag -b $input_bam > $bam
-            !samtools index $bam
-            !stats_from_bam $bam > $bam".stats"
-            !coverage_from_bam -s 50 -p $bam $bam
-            !rm -rf $bam $bam.bai
-        else:
-            !echo error " - No Artic output bam file found for primer set $i, Artic failed."
+    # output of the above will be...
+    sed -i "s/^>.*/>$directory/" $directory".consensus.fasta"
     """
 }
 
-process report {
+
+process postArticQC {
     label "artic"
     cpus 1
-    input:
-        gather_some_stuff
-    output:
-        file report_file
     """
-    #TODO make a report from all barcodes
+    echo "Nothing to see here"
     """
 }
 
-process all_consensus {
+//process report {
+//    label "artic"
+//    cpus 1
+//    input:
+//        gather_some_stuff
+//    output:
+//        file report_file
+//    """
+//    #TODO make a report from all barcodes
+//    """
+//}
+
+
+process allConsensus {
     label "artic"
     cpus 1
     input:
-        gather_some_stuff
-        file (optional) barcode_to_sample_key
+        file "bc_cons_*.fastq"
+        //file (optional) barcode_to_sample_key
     output:
-        file all_consensus.fasta
+        file "all_consensus.fasta"
     """
-    # TODO: gather all consensus, concatenate whilst (optionally) renaming
+    cat bc_cons_*.fastq > all_consensus.fasta
     """
+}
 
 
 // See https://github.com/nextflow-io/nextflow/issues/1636
@@ -135,16 +173,22 @@ process output {
 // workflow module
 workflow pipeline {
     take:
-        reads
+        source_directory
     main:
-        seqs = maybeDemultiplex(reads).splitText()
+        demultiplexed = maybeDemultiplex(source_directory)
+        barcode_dirs = channel.fromPath(params.fastq + "/barcode*/", type: 'dir') 
+        barcode_dirs.view { "value: $it" }
+        qc_results = preArticQC(barcode_dirs)
+        artic_consensus = runArtic(barcode_dirs)
+        consensus = allConsensus(artic_consensus)
     emit:
-        seqs
+        consensus
 }
 
 // entrypoint workflow
 workflow {
-    reads = channel.fromPath(params.reads, checkIfExists:true)
-    results = pipeline(reads)
+    barcode_dirs = channel.fromPath(params.fastq, type: 'dir')
+    barcode_dirs.view { "value: $it" }
+    results = pipeline(barcode_dirs)
     output(results)
 }
