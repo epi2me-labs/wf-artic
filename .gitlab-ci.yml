@@ -28,7 +28,7 @@ conda-run:
         - ./nextflow run workflow.nf
               -w ${OUTPUT}/workspace
               -profile conda
-              --reads test_data/sars-samples-demultiplexed/ 
+              --fastq test_data/sars-samples-demultiplexed/ 
               --out_dir ${OUTPUT}
 
 
@@ -47,7 +47,7 @@ build-image:
         - ./nextflow run workflow.nf
               -w ${OUTPUT}/workspace
               -profile standard
-              --reads test_data/sars-samples-demultiplexed/ 
+              --fastq test_data/sars-samples-demultiplexed/ 
               --out_dir ${OUTPUT}
         # push
         - if [[ ${CI_COMMIT_BRANCH} == 'dev' ]]; then
