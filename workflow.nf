@@ -52,14 +52,15 @@ process maybeDemultiplex {
     for d in os.listdir("$directory"):
         if d.startswith("barcode"):
             for f in os.listdir(os.path.join("$directory", d)):
+                fpath = os.path.join(d, f)
                 try:
-                    read = next(pysam.FastxFile(f))
+                    read = next(pysam.FastxFile(fpath))
                 except Exception as e:
                     print(e)
-                    print("{}/{} was not readable as fastq".format(d, f))
+                    print("{} was not readable as fastq".format(fpath))
                     pass
                 else:
-                    print("{}/{} looks like a fastq".format(d, f))
+                    print("{} looks like a fastq".format(fpath))
                     found = True
                     break
         if found:
