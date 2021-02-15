@@ -5,3 +5,6 @@ channels:
     - defaults
 dependencies:
     - artic==1.2.1
+    - pomoxis
+    - pip:
+        - aplanat

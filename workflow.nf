@@ -58,6 +58,7 @@ process runArtic {
     output:
         file("${sample_name}.consensus.fasta")
         tuple file("${sample_name}.pass.named.vcf.gz"), file("${sample_name}.pass.named.vcf.gz.tbi")
+        file("${sample_name}.depth.txt")
 
     """
     echo "=========="
@@ -77,34 +78,82 @@ process runArtic {
         --medaka-model $params.medaka_model \
         $sample_name \
         && echo " - artic minion finished"
+
     # add the sample name to the pass VCF
     zcat $sample_name".pass.vcf.gz" | sed "s/SAMPLE/$sample_name/" | bgzip > $sample_name".pass.named.vcf.gz"
     bcftools index -t $sample_name".pass.named.vcf.gz" 
-    # output of the above will be...
+
+    # rename the consensus sequence
     sed -i "s/^>.*/>$sample_name/" $sample_name".consensus.fasta"
+
+    # calculate depth stats. Final output is single file annotated with primer set and sample name
+    for i in 1 2; do
+        bam=$sample_name".primertrimmed.\$i.sorted.bam"
+        samtools view -r \$i -b $sample_name".primertrimmed.rg.sorted.bam" > \$bam
+        samtools index \$bam
+        stats_from_bam \$bam > \$bam".stats"
+        coverage_from_bam -s 10 -p \$bam \$bam
+        # TODO: we're assuming a single reference sequence here
+        awk 'BEGIN{OFS="\t"}{if(NR==1){print \$0, "sample_name", "primer_set"}else{print \$0, "$sample_name", '\$i'}}' *\${bam}*".depth.txt" > $sample_name".depth.\$i.txt"
+        rm -rf \$bam \$bam.bai
+    done
+    cat $sample_name".depth.1.txt" <(tail -n+2 $sample_name".depth.2.txt") > $sample_name".depth.txt"
     """
 }
 
 
-process postArticQC {
+process report {
     label "artic"
     cpus 1
+    input:
+        file "depths_*.txt"
+    output:
+        file "summary_report.html"
     """
-    echo "Nothing to see here"
+    #!/usr/bin/env python
+
+    import glob
+    import pandas as pd
+
+    from bokeh.layouts import gridplot
+    import aplanat
+    from aplanat import gridplot, lines, report
+
+    report = report.HTMLReport(
+        "SARS-CoV-2 ARTIC Sequencing report",
+        "")
+    dfs = list()
+    for fname in glob.glob("depths_*.txt"):
+        dfs.append(pd.read_csv(fname, sep="\t"))
+
+    df = pd.concat(dfs)
+    plots = list()
+    depth_lim = 100
+    for sample in df['sample_name'].unique():
+        pset = df['primer_set']
+        bc = df['sample_name'] == sample
+        xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
+        ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
+        
+        depth = df[bc].groupby('pos')['depth'].sum()
+        depth_thresh = 100*(depth >= depth_lim).sum() / len(depth)
+    
+        plot = lines.line(
+            xs, ys, colors=['blue', 'red'],
+            title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                sample, depth.mean(), depth_thresh, depth_lim),
+            height=200, width=400,
+            x_axis_label='position', y_axis_label='depth')
+        plots.append(plot)
+    plots = gridplot(plots, ncols=3)
+    report.markdown("#### Genome coverage", key="coverage_header")
+    report.plot(plots, "coverage_plots")
+    
+    # write report
+    report.write("summary_report.html")
+      
     """
 }
-
-//process report {
-//    label "artic"
-//    cpus 1
-//    input:
-//        gather_some_stuff
-//    output:
-//        file report_file
-//    """
-//    #TODO make a report from all barcodes
-//    """
-//}
 
 
 process allConsensus {
@@ -159,11 +208,15 @@ workflow pipeline {
     main:
         preArticQC(samples)
         runArtic(samples)
+        // collate consensus and variants
         all_consensus = allConsensus(runArtic.out[0].collect())
-        // surely theres another way?
-        tmp = runArtic.out[1].toList().transpose().toList()
+        tmp = runArtic.out[1].toList().transpose().toList() // surely theres another way?
         all_variants = allVariants(tmp)
-        results = all_consensus.concat(all_variants)
+        // report
+        html_doc = report(runArtic.out[2].collect()) 
+        
+
+        results = all_consensus.concat(all_variants, html_doc)
     emit:
         results
 }
