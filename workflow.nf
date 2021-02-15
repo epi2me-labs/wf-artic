@@ -26,8 +26,8 @@ if(params.help) {
     log.info '    --medaka_model   STR     Medaka model name'
     log.info '    --min_length     INT     Minimum read length'
     log.info '    --max_length     INT     Maximum read length'
-    log.info '    --samples        FILE    (Optional) tab-separated file with columns `barcode`'
-    log.info '                             and `sample_name` indicating correspondence between '
+    log.info '    --samples        FILE    CSV file with columns named `barcode` and `sample_name`' 
+    log.info '                             indicating correspondence between'
     log.info '                             barcodes and sample names.'
     log.info ''
 
@@ -35,54 +35,15 @@ if(params.help) {
 }
 
 
-process maybeDemultiplex {
-    label "artic"
-    cpus 1
-    input:
-        file directory
-    output:
-        file "out_directory"
-    """
-    #!/usr/bin/env python
-
-    import os
-    import pysam
-
-    found = False
-    for d in os.listdir("$directory"):
-        if d.startswith("barcode"):
-            for f in os.listdir(os.path.join("$directory", d)):
-                fpath = os.path.join("$directory", d, f)
-                try:
-                    read = next(pysam.FastxFile(fpath))
-                except Exception as e:
-                    print(e)
-                    print("{} was not readable as fastq".format(fpath))
-                    pass
-                else:
-                    print("{} looks like a fastq".format(fpath))
-                    found = True
-                    break
-        if found:
-            break
-    if found:
-        os.symlink("$directory", "out_directory")
-    else:
-        # TODO: run demultiplexing
-        raise RuntimeError("No 'barcode' directories found with valid .fastq")
-    """
-}
-
-
 process preArticQC {
     label "artic"
     cpus 1
     input:
-        file directory
+        tuple file(directory), val(sample_name) 
     output:
-        file "out_directory"
+        tuple file("out_directory"), val(sample_name) 
     """
-    echo $directory
+    echo $sample_name
     ln -s $directory out_directory
     """
 }
@@ -93,28 +54,34 @@ process runArtic {
     label "artic"
     cpus 2
     input:
-        file directory
+        tuple file(directory), val(sample_name)
     output:
-        file "*.consensus.fasta"
+        file("${sample_name}.consensus.fasta")
+        tuple file("${sample_name}.pass.named.vcf.gz"), file("${sample_name}.pass.named.vcf.gz.tbi")
 
     """
     echo "=========="
-    echo $directory
+    echo $directory, $sample_name
     echo "=========="
+    # name everything by the sample rather than barcode
+    ln -s $directory $sample_name
     artic guppyplex --skip-quality-check \
         --min-length $params.min_len --max-length $params.max_len \
-        --directory $directory --prefix $params.prefix \
+        --directory $sample_name --prefix $sample_name \
         && echo " - artic guppyplex finished"
     # the output of the above will be...
-    READFILE=$params.prefix"_"$directory".fastq"
+    READFILE=$sample_name"_"$sample_name".fastq"
 
     artic minion --medaka --normalise 200 --threads $task.cpus \
         --read-file \$READFILE $params.scheme \
         --medaka-model $params.medaka_model \
-        $directory \
+        $sample_name \
         && echo " - artic minion finished"
+    # add the sample name to the pass VCF
+    zcat $sample_name".pass.vcf.gz" | sed "s/SAMPLE/$sample_name/" | bgzip > $sample_name".pass.named.vcf.gz"
+    bcftools index -t $sample_name".pass.named.vcf.gz" 
     # output of the above will be...
-    sed -i "s/^>.*/>$directory/" $directory".consensus.fasta"
+    sed -i "s/^>.*/>$sample_name/" $sample_name".consensus.fasta"
     """
 }
 
@@ -144,12 +111,26 @@ process allConsensus {
     label "artic"
     cpus 1
     input:
-        file "bc_cons_*.fastq"
-        //file (optional) barcode_to_sample_key
+        file "sample_*.fastq"
     output:
         file "all_consensus.fasta"
     """
-    cat bc_cons_*.fastq > all_consensus.fasta
+    cat sample_*.fastq > all_consensus.fasta
+    """
+}
+
+
+process allVariants {
+    label "artic"
+    cpus 1
+    input:
+        tuple file(vcfs), file(tbis)
+    output:
+        file "all_variants.vcf.gz"
+        file "all_variants.vcf.gz.tbi"
+    """
+    bcftools merge -o all_variants.vcf.gz -O z *.vcf.gz
+    bcftools index -t all_variants.vcf.gz 
     """
 }
 
@@ -174,22 +155,47 @@ process output {
 // workflow module
 workflow pipeline {
     take:
-        source_directory
+        samples
     main:
-        demultiplexed = maybeDemultiplex(source_directory)
-        barcode_dirs = channel.fromPath(params.fastq + "/barcode*/", type: 'dir') 
-        barcode_dirs.view { "value: $it" }
-        qc_results = preArticQC(barcode_dirs)
-        artic_consensus = runArtic(barcode_dirs)
-        consensus = allConsensus(artic_consensus)
+        preArticQC(samples)
+        runArtic(samples)
+        all_consensus = allConsensus(runArtic.out[0].collect())
+        // surely theres another way?
+        tmp = runArtic.out[1].toList().transpose().toList()
+        all_variants = allVariants(tmp)
+        results = all_consensus.concat(all_variants)
     emit:
-        consensus
+        results
 }
 
 // entrypoint workflow
 workflow {
-    barcode_dirs = channel.fromPath(params.fastq, type: 'dir')
-    barcode_dirs.view { "value: $it" }
-    results = pipeline(barcode_dirs)
+
+    // resolve whether we have demultiplexed data or single sample
+    barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
+    not_barcoded = file("$params.fastq/*.fastq", type: 'file', maxdepth: 1)
+    if (barcode_dirs) {
+        println("Found barcode directories")
+        sample_sheet = Channel
+            .fromPath(params.samples, checkIfExists: true)
+            .splitCsv(header: true)
+            .map { row -> tuple(row.barcode, row.sample_name) }
+        Channel
+            .fromPath(barcode_dirs)
+            .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
+            .map { path -> tuple(path.baseName, path) }
+            .join(sample_sheet)
+            .map { barcode, path, sample -> tuple(path, sample) }
+            .set{ samples }
+    } else if (not_barcoded) {
+        println("Found fastq files, assuming single sample")
+        sample_sheet = Channel.of([$params.fastq, $params.samples])
+        Channel
+            .fromPath($params.fastq, type: 'dir', maxdepth:1)
+            .join(sample_sheet)
+            .set{ samples }
+    }
+    samples.view()
+    results = pipeline(samples)
     output(results)
 }

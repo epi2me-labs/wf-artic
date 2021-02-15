@@ -42,7 +42,8 @@ OUTPUT=workflow-test
 nextflow run workflow.nf \
     -w ${OUTPUT}/workspace \
     -profile standard \
-    --fastq test_data/sars-samples-mixed/  \
+    --fastq test_data/sars-samples-demultiplexed/ \
+    --samples test_data/sample_sheet \
     --out_dir ${OUTPUT}
 ```
 
@@ -60,7 +61,8 @@ OUTPUT=workflow-test
 nextflow run workflow.nf \
     -w ${OUTPUT}/workspace \
     -profile conda \
-    --fastq test_data/sars-samples-mixed/  \
+    --fastq test_data/sars-samples-demultiplexed/ \
+    --samples test_data/sample_sheet \
     --out_dir ${OUTPUT}
 ```
 
