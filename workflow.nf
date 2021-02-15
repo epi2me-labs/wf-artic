@@ -143,7 +143,8 @@ process report {
             title="{}: {:.0f}X, {:.1f}% > {}X".format(
                 sample, depth.mean(), depth_thresh, depth_lim),
             height=200, width=400,
-            x_axis_label='position', y_axis_label='depth')
+            x_axis_label='position', y_axis_label='depth',
+            ylim=(0,300))
         plots.append(plot)
     plots = gridplot(plots, ncols=3)
     report.markdown("#### Genome coverage", key="coverage_header")
