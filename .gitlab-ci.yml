@@ -31,6 +31,8 @@ conda-run:
               --fastq test_data/sars-samples-demultiplexed/
               --samples test_data/sample_sheet  
               --out_dir ${OUTPUT}
+    only:
+        - branches
 
 
 build-image:

@@ -156,7 +156,8 @@ import glob
 import numpy as np
 import pandas as pd
 
-from bokeh.layouts import gridplot
+from bokeh.layouts import gridplot, layout
+from bokeh.models import Panel, Tabs
 import aplanat
 from aplanat import annot, bars, gridplot, hist, lines, report
 
@@ -177,6 +178,10 @@ This section displays basic QC metrics indicating read data quality.
 
 min_read_length = $params.min_len
 max_read_length = $params.max_len
+np_blue = '#0084A9'
+np_dark_grey = '#455560'
+np_light_blue = '#90C6E7'
+
 
 # read length summary
 seq_summary = read_files("read_summary_*.txt")
@@ -185,7 +190,7 @@ mean_length = total_bases / len(seq_summary)
 median_length = np.median(seq_summary['sequence_length_template'])
 datas = [seq_summary['sequence_length_template']]
 length_hist = hist.histogram(
-    datas, bins=400,
+    datas, colors=[np_blue], bins=400,
     title="Read length distribution.",
     x_axis_label='Read Length / bases',
     y_axis_label='Number of reads',
@@ -204,7 +209,7 @@ length_hist = annot.subtitle(
 datas = [seq_summary['mean_qscore_template']]
 mean_q, median_q = np.mean(datas[0]), np.median(datas[0])
 q_hist = hist.histogram(
-    datas, bins=400,
+    datas, colors=[np_blue], bins=400,
     title="Read quality score",
     x_axis_label="Quality score",
     y_axis_label="Number of reads",
@@ -225,40 +230,70 @@ barcode_counts = (
     .rename(
         columns={'index':'sample', 'sample_name':'count'})
     )
+print(barcode_counts['count'])
 bc_counts = bars.simple_bar(
-    barcode_counts['sample'].astype(str), barcode_counts['count'],
-    title='Number of reads per barcode (filtered by {} < length < {})'.format(min_read_length, max_read_length))
+    barcode_counts['sample'].astype(str), barcode_counts['count'], colors=[np_blue]*len(barcode_counts),
+    title='Number of reads per barcode (filtered by {} < length < {})'.format(min_read_length, max_read_length),
+    plot_width=None
+)
 bc_counts.xaxis.major_label_orientation = 3.14/2
-report_doc.plot(gridplot([length_hist, q_hist, bc_counts], ncols=2))
+report_doc.plot(
+    layout(
+        [[length_hist, q_hist], [bc_counts]],
+        sizing_mode="stretch_width"))
 
 # depth summary by amplicon pool
 df = read_files("depths_*.txt")
-plots = list()
+plots_pool = list()
+plots_orient = list()
 depth_lim = 100
 for sample in df['sample_name'].unique():
-    pset = df['primer_set']
     bc = df['sample_name'] == sample
-    xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
-    ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
-    
     depth = df[bc].groupby('pos')['depth'].sum()
     depth_thresh = 100*(depth >= depth_lim).sum() / len(depth)
 
+    # primer set plot
+    pset = df['primer_set']
+    xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
+    ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
+    
     plot = lines.line(
-        xs, ys, colors=['blue', 'red'],
+        xs, ys, colors=[np_light_blue, np_dark_grey],
         title="{}: {:.0f}X, {:.1f}% > {}X".format(
             sample, depth.mean(), depth_thresh, depth_lim),
         height=200, width=400,
         x_axis_label='position', y_axis_label='depth',
         ylim=(0,300))
-    plots.append(plot)
+    plots_pool.append(plot)
+
+    # fwd/rev
+    data = df[bc].groupby('pos').sum().reset_index()
+    xs = [data['pos'], data['pos']]
+    ys = [data['depth_fwd'], data['depth_rev']]
+    plot = lines.line(
+        xs, ys, colors=[np_light_blue, np_dark_grey],
+        title="{}: {:.0f}X, {:.1f}% > {}X".format(
+            sample, depth.mean(), depth_thresh, depth_lim),
+        height=200, width=400,
+        x_axis_label='position', y_axis_label='depth',
+        ylim=(0,300))
+    plots_orient.append(plot)
+
+
+tab1 = Panel(
+    child=gridplot(plots_pool, ncols=3), title="By amplicon pool")
+tab2 = Panel(
+    child=gridplot(plots_orient, ncols=3), title="By read orientation")
+cover_panel = Tabs(tabs=[tab1, tab2])
+
 report_doc.markdown('''
 #### Genome coverage
 Plots below indicate depth of coverage from data used within the Artic analysis
 coloured by amplicon pool. For adequate variant calling depth should be at least
-30X in any region.
+30X in any region. Pool-1 reads are shown in light-blue, Pool-2 reads are dark grey
+(a similarly for forward and reverse reads respectively).
 ''')
-report_doc.plot(gridplot(plots, ncols=3))
+report_doc.plot(cover_panel)
 
 # nextclade data
 with open("nextclade.json", encoding='utf8') as fh:
