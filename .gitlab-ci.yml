@@ -97,6 +97,8 @@ release-hub:
     script:
         - echo ${DOCKERHUB_TOKEN} | docker login --username epi2melabs --password-stdin
         - RELTAG="${DOCKERHUB_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_TAG}"
+        - LATEST="${DOCKERHUB_NAMESPACE}/${CI_PROJECT_NAME}:latest"
         - echo "Pushing ${RELTAG}"
         - docker tag ${SHATAG} ${RELTAG}
         - docker push ${RELTAG}
+        - docker push ${LATEST}
