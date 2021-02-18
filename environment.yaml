@@ -6,4 +6,5 @@ channels:
 dependencies:
     - artic==1.2.1
     - pomoxis
-    - aplanat>=0.2.8
+    - pip:
+        - aplanat>=0.2.8
