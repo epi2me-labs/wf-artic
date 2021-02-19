@@ -8,9 +8,11 @@ RUN \
     && . $CONDA_DIR/etc/profile.d/mamba.sh \
     && micromamba activate \
     && micromamba install --file $HOME/environment.fixed.yaml \
-    && pip install "aplanat>=0.2.9" \
     && fix-permissions $CONDA_DIR \
     && fix-permissions $HOME
+RUN \
+    . $CONDA_DIR/etc/profile.d/mamba.sh \
+    && pip install "aplanat>=0.2.9"
 
 USER $WF_UID
 WORKDIR $HOME

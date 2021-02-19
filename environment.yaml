@@ -5,7 +5,6 @@ channels:
     - defaults
 dependencies:
     - artic==1.2.1
-    - nextalign
     - pomoxis
     - pip:
         - aplanat>=0.2.9
