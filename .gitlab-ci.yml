@@ -25,7 +25,7 @@ conda-run:
         - *install-nextflow
         - *install-conda
     script:
-        - ./nextflow run workflow.nf
+        - ./nextflow run main.nf
               -w ${OUTPUT}/workspace
               -profile conda
               --fastq test_data/sars-samples-demultiplexed/
@@ -46,8 +46,8 @@ build-image:
         - docker build --no-cache -t "${TAG}" -f Dockerfile . --build-arg BASEIMAGE=${BASEIMAGE}
         # run letting nextflow orchestrate the containers
         - docker tag "${TAG}" "${DOCKERHUB_NAMESPACE}/${CI_PROJECT_NAME}:latest"
-        - OUTPUT="template-workflow"
-        - ./nextflow run workflow.nf
+        - OUTPUT=${CI_PROJECT_NAME}
+        - ./nextflow run main.nf
               -w ${OUTPUT}/workspace
               -profile standard
               --fastq test_data/sars-samples-demultiplexed/ 
@@ -65,7 +65,7 @@ build-image:
     artifacts:
         paths:
             # Add the output directory for the test
-            - "template-workflow"
+            - ${CI_PROJECT_NAME}
         expire_in: 1 day
 
 
