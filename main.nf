@@ -2,39 +2,31 @@
 
 nextflow.enable.dsl = 2
 
-params.help = ""
-params.out_dir = "output"
-params.prefix = "artic"
-params.min_len = "300"
-params.max_len = "700"
-params.medaka_model = "r941_min_high_g360"
-params.scheme_name = "SARS-CoV-2"
-params.scheme_version = "V3"
+valid_schemes = ["V1", "V2", "V3", "V1200"]
 
+def helpMessage(){
+    log.info """
+SARS-Cov-2 Artic Analysis Workflow
 
-if(params.help) {
-    log.info ''
-    log.info 'Workflow template'
-    log.info ''
-    log.info 'Usage: '
-    log.info '    nextflow run workflow.nf [options]'
-    log.info ''
-    log.info 'Script Options: '
-    log.info '    --fastq             DIR     Path to FASTQ directory'
-    log.info '    --out_dir           DIR     Path for output'
-    log.info '    --prefix            STR     Output filename prefix'
-    log.info '    --medaka_model      STR     Medaka model name'
-    log.info '    --min_length        INT     Minimum read length'
-    log.info '    --max_length        INT     Maximum read length'
-    log.info '    --samples           FILE    CSV file with columns named `barcode` and `sample_name`'
-    log.info '    --scheme_version    STR     Primer scheme (V1, V2, V3, V1200)'
-    log.info '                                indicating correspondence between'
-    log.info '                                barcodes and sample names.'
-    log.info ''
+Usage:
+    nextflow run main.nf [options]
 
-    return
+Options:
+    --fastq             DIR     Path to FASTQ directory (required)
+    --samples           FILE    CSV file with columns named `barcode` and `sample_name` (required)
+    --out_dir           DIR     Path for output (default: $params.out_dir)
+    --medaka_model      STR     Medaka model name (default: $params.medaka_model)
+    --min_len           INT     Minimum read length (default: set by scheme)
+    --max_len           INT     Maximum read length (default: set by scheme)
+    --scheme_version    STR     Primer scheme ($valid_schemes)
+                                indicating correspondence between
+                                barcodes and sample names. (default: $params.scheme_version)
+
+Notes:
+    Minimum and maximum rad length filters are applied based on the amplicon scheme.
+    These can be overridden using the `--min_len` and `--max_len` options.
+"""
 }
-
 
 process preArticQC {
     label "artic"
@@ -105,7 +97,7 @@ process runArtic {
     # name everything by the sample rather than barcode
     ln -s $directory $sample_name
     artic guppyplex --skip-quality-check \
-        --min-length $params.min_len --max-length $params.max_len \
+        --min-length $params._min_len --max-length $params._max_len \
         --directory $sample_name --prefix $sample_name \
         && echo " - artic guppyplex finished"
     # the output of the above will be...
@@ -176,8 +168,8 @@ report_doc.markdown('''
 This section displays basic QC metrics indicating read data quality.
 ''')
 
-min_read_length = $params.min_len
-max_read_length = $params.max_len
+min_read_length = $params._min_len
+max_read_length = $params._max_len
 np_blue = '#0084A9'
 np_dark_grey = '#455560'
 np_light_blue = '#90C6E7'
@@ -395,6 +387,45 @@ workflow pipeline {
 
 // entrypoint workflow
 workflow {
+
+    if (!params.samples or !params.fastq) {
+        println("`--samples and `--fastq` are required")
+        helpMessage()
+        exit 1
+    }
+
+    if (!valid_schemes.any { it == params.scheme_version}) {
+        println("`--scheme_version should be one of: $valid_schemes")
+        exit 1
+    }
+
+    if (!params.min_len) {
+        params.remove('min_len')
+        if (params.scheme_version == "V1200") {
+            params._min_len = 150
+        } else {
+            params._min_len = 400
+        }
+    } else {
+        params._min_len = params.min_len
+        params.remove('min_len')
+    }
+    if (!params.max_len) { 
+        params.remove('max_len')
+        if (params.scheme_version == "V1200") {
+            params._max_len = 1200
+        } else {
+            params._max_len = 700
+        }
+    } else {
+        params._min_len = params.min_len
+        params.remove('min_len')
+    }
+    println("")
+    println("Parameter summary")
+    println("=================")
+    params.each { it -> println("    $it.key: $it.value") }
+    println("")
 
     params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
     schemes = projectDir + '/data/primer_schemes' 
