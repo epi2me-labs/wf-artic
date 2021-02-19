@@ -159,7 +159,7 @@ import pandas as pd
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Tabs
 import aplanat
-from aplanat import annot, bars, gridplot, hist, lines, report
+from aplanat import annot, bars, gridplot, hist, lines, points, report
 
 report_doc = report.HTMLReport(
     "SARS-CoV-2 ARTIC Sequencing report",
@@ -257,7 +257,7 @@ for sample in df['sample_name'].unique():
     xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
     ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
     
-    plot = lines.line(
+    plot = points.points(
         xs, ys, colors=[np_light_blue, np_dark_grey],
         title="{}: {:.0f}X, {:.1f}% > {}X".format(
             sample, depth.mean(), depth_thresh, depth_lim),
@@ -270,7 +270,7 @@ for sample in df['sample_name'].unique():
     data = df[bc].groupby('pos').sum().reset_index()
     xs = [data['pos'], data['pos']]
     ys = [data['depth_fwd'], data['depth_rev']]
-    plot = lines.line(
+    plot = points.points(
         xs, ys, colors=[np_light_blue, np_dark_grey],
         title="{}: {:.0f}X, {:.1f}% > {}X".format(
             sample, depth.mean(), depth_thresh, depth_lim),
