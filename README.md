@@ -39,7 +39,7 @@ argument to `nextflow run`:
 
 ```
 OUTPUT=workflow-test
-nextflow run workflow.nf \
+nextflow run main.nf \
     -w ${OUTPUT}/workspace \
     -profile standard \
     --fastq test_data/sars-samples-demultiplexed/ \
@@ -58,7 +58,7 @@ To run the workflow backed by conda environments, simply provide the
 
 ```
 OUTPUT=workflow-test
-nextflow run workflow.nf \
+nextflow run main.nf \
     -w ${OUTPUT}/workspace \
     -profile conda \
     --fastq test_data/sars-samples-demultiplexed/ \
