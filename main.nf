@@ -122,7 +122,7 @@ process runArtic {
         samtools view -r \$i -b $sample_name".primertrimmed.rg.sorted.bam" > \$bam
         samtools index \$bam
         stats_from_bam \$bam > \$bam".stats" || echo "stats_from_bam failed, probably no alignments"
-        coverage_from_bam -s 10 -p \$bam \$bam
+        coverage_from_bam -s 20 -p \$bam \$bam
         # TODO: we're assuming a single reference sequence here
         awk 'BEGIN{OFS="\t"}{if(NR==1){print \$0, "sample_name", "primer_set"}else{print \$0, "$sample_name", '\$i'}}' *\${bam}*".depth.txt" > $sample_name".depth.\$i.txt"
         rm -rf \$bam \$bam.bai
@@ -164,7 +164,7 @@ def read_files(pattern):
     return pd.concat(dfs)
 
 report_doc.markdown('''
-#### Read Quality control
+### Read Quality control
 This section displays basic QC metrics indicating read data quality.
 ''')
 
@@ -182,7 +182,7 @@ mean_length = total_bases / len(seq_summary)
 median_length = np.median(seq_summary['sequence_length_template'])
 datas = [seq_summary['sequence_length_template']]
 length_hist = hist.histogram(
-    datas, colors=[np_blue], bins=400,
+    datas, colors=[np_blue], bins=100,
     title="Read length distribution.",
     x_axis_label='Read Length / bases',
     y_axis_label='Number of reads',
@@ -201,7 +201,7 @@ length_hist = annot.subtitle(
 datas = [seq_summary['mean_qscore_template']]
 mean_q, median_q = np.mean(datas[0]), np.median(datas[0])
 q_hist = hist.histogram(
-    datas, colors=[np_blue], bins=400,
+    datas, colors=[np_blue], bins=100,
     title="Read quality score",
     x_axis_label="Quality score",
     y_axis_label="Number of reads",
@@ -222,7 +222,7 @@ barcode_counts = (
     .rename(
         columns={'index':'sample', 'sample_name':'count'})
     )
-print(barcode_counts['count'])
+
 bc_counts = bars.simple_bar(
     barcode_counts['sample'].astype(str), barcode_counts['count'], colors=[np_blue]*len(barcode_counts),
     title='Number of reads per barcode (filtered by {} < length < {})'.format(min_read_length, max_read_length),
@@ -279,7 +279,7 @@ tab2 = Panel(
 cover_panel = Tabs(tabs=[tab1, tab2])
 
 report_doc.markdown('''
-#### Genome coverage
+### Genome coverage
 Plots below indicate depth of coverage from data used within the Artic analysis
 coloured by amplicon pool. For adequate variant calling depth should be at least
 30X in any region. Pool-1 reads are shown in light-blue, Pool-2 reads are dark grey
@@ -296,6 +296,16 @@ report_doc.markdown('''
 The following view is produced by the [nextclade](https://clades.nextstrain.org/) software.
 ''')
 report_doc.plot(nextclade)
+
+report_doc.markdown('''
+### About
+*Research use only*
+
+This report was produced using the [epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic).
+The workflow can be run using `nextflow epi2me-labs/wf-artic --help`
+
+---
+''')
 
 # write report
 report_doc.write("summary_report.html")
