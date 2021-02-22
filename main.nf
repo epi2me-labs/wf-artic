@@ -299,7 +299,9 @@ report_doc.plot(nextclade)
 
 report_doc.markdown('''
 ### About
-*Research use only*
+
+**Oxford Nanopore Technologies products are not intended for use for health assessment
+or to diagnose, treat, mitigate, cure or prevent any disease or condition.**
 
 This report was produced using the [epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic).
 The workflow can be run using `nextflow epi2me-labs/wf-artic --help`
