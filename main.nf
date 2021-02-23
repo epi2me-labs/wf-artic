@@ -344,13 +344,14 @@ process allVariants {
 
 
 process nextclade {
-    label "nextclade"
+    label "artic"
     cpus 1
     input:
         file "consensus.fasta"
     output:
         file "nextclade.json"
     """
+    which nextclade
     nextclade --input-fasta 'consensus.fasta' --output-json 'nextclade.json'
     """
 }
