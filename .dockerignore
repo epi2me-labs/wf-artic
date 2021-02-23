@@ -1,1 +1,11 @@
 .git
+fieldbioinformatics
+LICENSE
+main.nf
+more_test_data
+nextflow.config
+output
+README.md
+test_data
+twist_v1200_output
+work

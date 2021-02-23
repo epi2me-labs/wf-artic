@@ -4,15 +4,11 @@ FROM $BASEIMAGE
 # Minimal install for example purposes
 COPY environment.yaml $HOME/environment.yaml 
 RUN \
-    awk '{if(index($0, "- pip")){exit 0}else{print}}' $HOME/environment.yaml > $HOME/environment.fixed.yaml \
-    && . $CONDA_DIR/etc/profile.d/mamba.sh \
+    . $CONDA_DIR/etc/profile.d/mamba.sh \
     && micromamba activate \
-    && micromamba install --file $HOME/environment.fixed.yaml \
+    && micromamba install --file $HOME/environment.yaml \
     && fix-permissions $CONDA_DIR \
     && fix-permissions $HOME
-RUN \
-    . $CONDA_DIR/etc/profile.d/mamba.sh \
-    && pip install "aplanat>=0.2.9"
 
 USER $WF_UID
 WORKDIR $HOME
