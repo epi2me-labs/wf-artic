@@ -50,6 +50,7 @@ build-image:
         - ./nextflow run main.nf
               -w ${OUTPUT}/workspace
               -profile standard
+              --wfversion latest
               --fastq test_data/sars-samples-demultiplexed/ 
               --samples test_data/sample_sheet  
               --out_dir ${OUTPUT}
