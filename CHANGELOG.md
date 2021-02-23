@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.0.6]
 ### Added
 - Support for fragmented amplicons.
+- Enabled use of conda profile.
 ### Changed
-- Use custom np-artic package based on 1.3.0-dev branch of original
+- Use custom np-artic package based on 1.3.0-dev branch of original.
+- Use nextclade from conda package
 - Amended default local executor CPU resource to be more parsimonious.
 
 ## [v0.0.5]
