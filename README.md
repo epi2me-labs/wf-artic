@@ -9,6 +9,8 @@ software isolation method to Docker.
 
 ## Quickstart
 
+> NextFlow requires a java runtime.
+
 ### Building the container
 
 > This step is not necessary if you intend to run the workflow using
