@@ -417,9 +417,15 @@ workflow pipeline {
 // entrypoint workflow
 workflow {
 
-    if (!params.fastq) {
-        println("`--fastq` is required")
+    if (params.help) {
         helpMessage()
+        exit 1
+    }
+
+    if (!params.fastq) {
+        helpMessage()
+        println("")
+        println("`--fastq` is required")
         exit 1
     }
 

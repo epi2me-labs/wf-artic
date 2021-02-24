@@ -25,6 +25,7 @@ conda-run:
         - *install-nextflow
         - *install-conda
     script:
+        - OUTPUT=${CI_PROJECT_NAME}
         - ./nextflow run main.nf
               -w ${OUTPUT}/workspace
               -profile conda
@@ -118,8 +119,8 @@ push-github:
         - mkdir ~/.ssh/
         - cp $LABS_BOT_GH_KEY ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
         - echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tHostname ssh.github.com\n\tPort 443\n\n" > ~/.ssh/config
-        - git config --global user.email "research.git@nanoporetech.com"
-        - git config --global user.name "ontresearch"
+        - git config --global user.email "epi2melabs@nanoporetech.com"
+        - git config --global user.name "epi2melabs-bot"
     script:
         # Push master and tag to github
         - git remote add ont ${CI_REPOSITORY_URL} || true
