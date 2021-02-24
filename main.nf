@@ -13,7 +13,8 @@ Usage:
 
 Options:
     --fastq             DIR     Path to FASTQ directory (required)
-    --samples           FILE    CSV file with columns named `barcode` and `sample_name` (required)
+    --samples           FILE    CSV file with columns named `barcode` and `sample_name`
+                                (or simply a sample name for non-multiplexed data).
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --medaka_model      STR     Medaka model name (default: $params.medaka_model)
     --min_len           INT     Minimum read length (default: set by scheme)
@@ -23,6 +24,12 @@ Options:
                                 barcodes and sample names. (default: $params.scheme_version)
 
 Notes:
+    If directories named "barcode*" are found under the `--fastq` directory the
+    data is assumed to be multiplex and each barcode directory will be processed
+    independently. If `.fastq(.gz)` files are found under the `--fastq` directory
+    the sample is assumed to not be multiplexed. In this second case `--samples`
+    should be a simple name rather than a CSV file.
+
     Minimum and maximum rad length filters are applied based on the amplicon scheme.
     These can be overridden using the `--min_len` and `--max_len` options.
 """
@@ -95,7 +102,11 @@ process runArtic {
     }
 
     # name everything by the sample rather than barcode
-    ln -s $directory $sample_name
+    if [[ "$directory" != "$sample_name" ]]; then
+        echo "Moving input: '$directory' to '$sample_name'"
+        mv $directory $sample_name
+    fi
+
     artic guppyplex --skip-quality-check \
         --min-length $params._min_len --max-length $params._max_len \
         --directory $sample_name --prefix $sample_name \
@@ -348,11 +359,15 @@ process nextclade {
     cpus 1
     input:
         file "consensus.fasta"
+        file "reference.fasta"
+        file scheme_bed
     output:
         file "nextclade.json"
     """
-    which nextclade
-    nextclade --input-fasta 'consensus.fasta' --output-json 'nextclade.json'
+    scheme_to_nextclade.py $scheme_bed reference.fasta primers.csv
+    nextclade \
+        --input-fasta consensus.fasta --input-pcr-primers primers.csv \
+        --output-json nextclade.json
     """
 }
 
@@ -379,6 +394,8 @@ workflow pipeline {
     take:
         samples
         scheme_directory
+        reference
+        primers
     main:
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
@@ -387,11 +404,10 @@ workflow pipeline {
         tmp = runArtic.out[1].toList().transpose().toList() // surely theres another way?
         all_variants = allVariants(tmp)
         // nextclade
-        clades = nextclade(all_consensus)
+        clades = nextclade(all_consensus, reference, primers)
         // report
         html_doc = report(
             runArtic.out[2].collect(), read_summaries.collect(), clades.collect())
-        
 
         results = all_consensus.concat(all_variants, html_doc)
     emit:
@@ -401,8 +417,8 @@ workflow pipeline {
 // entrypoint workflow
 workflow {
 
-    if (!params.samples or !params.fastq) {
-        println("`--samples and `--fastq` are required")
+    if (!params.fastq) {
+        println("`--fastq` is required")
         helpMessage()
         exit 1
     }
@@ -443,16 +459,30 @@ workflow {
     params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
     schemes = projectDir + '/data/primer_schemes' 
     scheme_directory = file(schemes, type: 'dir', checkIfExists:true)
+    reference = file(
+        "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.reference.fasta",
+        type:'file', checkIfExists:true)
+    primers = file(
+        "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
+        type:'file', checkIfExists:true)
 
     // resolve whether we have demultiplexed data or single sample
     barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
-    not_barcoded = file("$params.fastq/*.fastq", type: 'file', maxdepth: 1)
+    not_barcoded = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
     if (barcode_dirs) {
         println("Found barcode directories")
-        sample_sheet = Channel
-            .fromPath(params.samples, checkIfExists: true)
-            .splitCsv(header: true)
-            .map { row -> tuple(row.barcode, row.sample_name) }
+        if (params.samples) {
+            sample_sheet = Channel
+                .fromPath(params.samples, checkIfExists: true)
+                .splitCsv(header: true)
+                .map { row -> tuple(row.barcode, row.sample_name) }
+        } else {
+            // just map directory name to self
+            sample_sheet = Channel
+                .fromPath(barcode_dirs)
+                .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
+                .map { path -> tuple(path.baseName, path.baseName) }
+        }
         Channel
             .fromPath(barcode_dirs)
             .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
@@ -468,7 +498,6 @@ workflow {
             .join(sample_sheet)
             .set{ samples }
     }
-    //samples.view()
-    results = pipeline(samples, scheme_directory)
+    results = pipeline(samples, scheme_directory, reference, primers)
     output(results)
 }
