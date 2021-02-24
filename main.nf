@@ -170,7 +170,7 @@ report_doc = report.HTMLReport(
 
 def read_files(pattern):
     dfs = list()
-    for fname in glob.glob(pattern):
+    for fname in sorted(glob.glob(pattern)):
         dfs.append(pd.read_csv(fname, sep="\\t"))
     return pd.concat(dfs)
 
@@ -250,7 +250,7 @@ df = read_files("depths_*.txt")
 plots_pool = list()
 plots_orient = list()
 depth_lim = 100
-for sample in df['sample_name'].unique():
+for sample in sorted(df['sample_name'].unique()):
     bc = df['sample_name'] == sample
     depth = df[bc].groupby('pos')['depth'].sum()
     depth_thresh = 100*(depth >= depth_lim).sum() / len(depth)
@@ -330,11 +330,11 @@ process allConsensus {
     label "artic"
     cpus 1
     input:
-        file "sample_*.fastq"
+        file "*"
     output:
         file "all_consensus.fasta"
     """
-    cat sample_*.fastq > all_consensus.fasta
+    ls *.consensus.fasta | xargs cat > all_consensus.fasta
     """
 }
 
