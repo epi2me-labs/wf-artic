@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.0.7]
+## Changed
+- Sample sheet is no longer required.
+- Sort report items consistently by sample name.
+- Nextclade visual will display overlap to primer scheme selected by user.
 
 ## [v0.0.6]
 ### Added
