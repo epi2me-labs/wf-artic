@@ -48,7 +48,7 @@ This section displays basic QC metrics indicating read data quality.
     median_length = np.median(seq_summary['sequence_length_template'])
     datas = [seq_summary['sequence_length_template']]
     length_hist = hist.histogram(
-        datas, colors=[Colors.np_blue.value], bins=100,
+        datas, colors=[Colors.cerulean], bins=100,
         title="Read length distribution.",
         x_axis_label='Read Length / bases',
         y_axis_label='Number of reads',
@@ -67,7 +67,7 @@ This section displays basic QC metrics indicating read data quality.
     datas = [seq_summary['mean_qscore_template']]
     mean_q, median_q = np.mean(datas[0]), np.median(datas[0])
     q_hist = hist.histogram(
-        datas, colors=[Colors.np_blue.value], bins=100,
+        datas, colors=[Colors.cerulean], bins=100,
         title="Read quality score",
         x_axis_label="Quality score",
         y_axis_label="Number of reads",
@@ -90,7 +90,7 @@ This section displays basic QC metrics indicating read data quality.
         )
 
     bc_counts = bars.simple_bar(
-        barcode_counts['sample'].astype(str), barcode_counts['count'], colors=[Colors.np_blue.value]*len(barcode_counts),
+        barcode_counts['sample'].astype(str), barcode_counts['count'], colors=[Colors.cerulean]*len(barcode_counts),
         title='Number of reads per barcode (filtered by {} < length < {})'.format(args.min_len, args.max_len),
         plot_width=None
     )
@@ -125,7 +125,7 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
         ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
 
         plot = points.points(
-            xs, ys, colors=[Colors.np_light_blue.value, Colors.np_dark_grey.value],
+            xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
             title="{}: {:.0f}X, {:.1f}% > {}X".format(
                 sample, depth.mean(), depth_thresh, depth_lim),
             height=200, width=400,
@@ -138,7 +138,7 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
         xs = [data['pos'], data['pos']]
         ys = [data['depth_fwd'], data['depth_rev']]
         plot = points.points(
-            xs, ys, colors=[Colors.np_light_blue.value, Colors.np_dark_grey.value],
+            xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
             title="{}: {:.0f}X, {:.1f}% > {}X".format(
                 sample, depth.mean(), depth_thresh, depth_lim),
             height=200, width=400,
