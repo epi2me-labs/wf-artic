@@ -41,9 +41,9 @@ process preArticQC {
     input:
         tuple file(directory), val(sample_name) 
     output:
-        file "seq_summary.txt"
+        file "${sample_name}.stats"
     """
-    seq_summary.py $directory seq_summary.txt --sample_name $sample_name
+    seq_summary.py $directory ${sample_name}.stats --sample_name $sample_name
     """
 }
 
@@ -55,15 +55,16 @@ process runArtic {
         tuple file(directory), val(sample_name)
         file "primer_schemes"
     output:
-        file("${sample_name}.consensus.fasta")
+        file "${sample_name}.consensus.fasta"
         tuple file("${sample_name}.pass.named.vcf.gz"), file("${sample_name}.pass.named.vcf.gz.tbi")
-        file("${sample_name}.depth.txt")
-
+        file "${sample_name}.depth.txt"
+        file "${sample_name}.pass.named.stats"
     """
     run_artic.sh \
-        $sample_name $directory $params._min_len $params._max_len \
-        $params.medaka_model $params.full_scheme_name \
-        $task.cpus
+        ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
+        ${params.medaka_model} ${params.full_scheme_name} \
+        ${task.cpus}
+    bcftools stats ${sample_name}.pass.named.vcf.gz > ${sample_name}.pass.named.stats 
     """
 }
 
@@ -72,15 +73,17 @@ process report {
     label "artic"
     cpus 1
     input:
-        file "depths_*.txt"
-        file "read_summary_*.txt"
+        file "depth_stats/*"
+        file "read_stats/*"
         file "nextclade.json"
+        file "vcf_stats/*"
     output:
         file "summary_report.html"
     """
     report.py nextclade.json summary_report.html \
         --min_len $params._min_len --max_len $params._max_len \
-        --depths depths_*.txt --summaries read_summary_*.txt
+        --depths depth_stats/* --summaries read_stats/* \
+        --bcftools_stats vcf_stats/*
     """
 }
 
@@ -104,11 +107,10 @@ process allVariants {
     input:
         tuple file(vcfs), file(tbis)
     output:
-        file "all_variants.vcf.gz"
-        file "all_variants.vcf.gz.tbi"
+        tuple file("all_variants.vcf.gz"), file("all_variants.vcf.gz.tbi")
     """
     bcftools merge -o all_variants.vcf.gz -O z *.vcf.gz
-    bcftools index -t all_variants.vcf.gz 
+    bcftools index -t all_variants.vcf.gz
     """
 }
 
@@ -166,9 +168,11 @@ workflow pipeline {
         clades = nextclade(all_consensus, reference, primers)
         // report
         html_doc = report(
-            runArtic.out[2].collect(), read_summaries.collect(), clades.collect())
-
-        results = all_consensus.concat(all_variants, html_doc)
+            runArtic.out[2].collect(),
+            read_summaries.collect(), 
+            clades.collect(), 
+            runArtic.out[3].collect())
+        results = all_consensus.concat(all_variants[0].flatten(), html_doc)
     emit:
         results
 }

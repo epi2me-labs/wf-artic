@@ -104,7 +104,7 @@ argument to `nextflow run`:
 ```
 # run the pipeline with the test data
 OUTPUT=my_artic_output
-nextflow run epi2me-labs/wf-artif \
+nextflow run epi2me-labs/wf-artic \
     -w ${OUTPUT}/workspace
     -profile standard
     --fastq test_data/sars-samples-demultiplexed/
@@ -130,7 +130,7 @@ in the command above.
 ### Configuration and tuning
 
 > This section provides some minimal guidance for changing common options, see
-> the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for further details.***
+> the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for further details.
 
 The default settings for the workflow are described in the configuration file `nextflow.config`
 found within the git repository. The default configuration defines an *executor* that will 
@@ -233,3 +233,12 @@ In order to run the workflow with this new image it is required to give
 nextflow run epi2me-labs/wf-artic \
     --wfversion latest
 ```
+
+
+## Useful links
+
+* [medaka](https://www.github.com/nanoporetech/medaka)
+* [artic](https://github.com/artic-network/fieldbioinformatics)
+* [nextflow](https://www.nextflow.io/)
+* [docker](https://www.docker.com/products/docker-desktop)
+* [conda](https://docs.conda.io/en/latest/miniconda.html)
