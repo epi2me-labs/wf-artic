@@ -61,9 +61,9 @@ process runArtic {
         file "${sample_name}.pass.named.stats"
     """
     run_artic.sh \
-        $sample_name $directory $params._min_len $params._max_len \
-        $params.medaka_model $params.full_scheme_name \
-        $task.cpus
+        ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
+        ${params.medaka_model} ${params.full_scheme_name} \
+        ${task.cpus}
     bcftools stats ${sample_name}.pass.named.vcf.gz > ${sample_name}.pass.named.stats 
     """
 }
