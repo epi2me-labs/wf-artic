@@ -21,9 +21,9 @@ either docker of conda is installed.
 
 **Workflow options**
 
-*For more information see the "Running the workflow" section below*
+> For more information see the "Running the workflow" section below
 
-With the prerequisites install, users can run:
+With the prerequisites installed, users can run:
 
     nextflow run epi2me-labs/wf-artic --help
 
