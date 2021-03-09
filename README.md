@@ -49,15 +49,28 @@ sudo usermod -aG docker $USER
 
 ## Running the workflow
 
+The `wf-artic` workflow can be controlled by the following parameters. The `fastq` parameter
+is the most important parameters because it is required to identify the location of the
+sequence files to be analysed. It is also important to note the `scheme_version` parameter
+that should be changed from the default **V3** value if e.g. the LoCost, ECO or midnight 
+variants of the ARTIC protocol are being used.
+
 Parameters:
-- fastq             DIR     Path to FASTQ directory (required)
-- samples           FILE    CSV file with columns named `barcode` and `sample_name`
-                                (or simply a sample name for non-multiplexed data).
-- out_dir           DIR     Path for output (default: output)
-- medaka_model      STR     Medaka model name (default: r941_min_high_g360)
-- min_len           INT     Minimum read length (default: set by scheme)
-- max_len           INT     Maximum read length (default: set by scheme)
-- scheme_version    STR     Primer scheme ([V1, V2, V3, V1200]
+- `fastq` specifies a *directory* path to FASTQ files (required)
+- `samples` locates a CSV file with columns named `barcode` and `sample_name`
+   (or simply a sample name for non-multiplexed data) - this is used to replace
+   barcode identifiers with other sample identifiers
+- `out_dir` the path for output (default: output)
+- `medaka_model` the medaka model name (default: r941_min_high_g360) to use during
+   the consensus sequence polishing.
+- `min_len` Minimum read length (default: set by scheme)
+- `max_len` Maximum read length (default: set by scheme)
+- `scheme_version` Primer scheme ([V1, V2, V3, V1200]
+
+## Running the workflow with Conda
+
+I HAVEN'T TESTED WORKFLOW WITH CONDA - PLEASE CAN WE HAVE A COUPLE OF STATEMENTS HERE TO
+REASSURE?
 
 
 ## Updating the workflow
@@ -71,7 +84,7 @@ This file defines an *executor* that can use a maximum of four CPU cores and eig
 RAM. If the workflow is being run on a device other than a GridION, the available memory and
 number of CPUs may be adjusted to the available number of CPU cores.
 
-## Building from source
+## Building the docker container from source
 
 ```
 CONTAINER_TAG=ontresearch/wf-artic
