@@ -98,6 +98,9 @@ variants of the ARTIC protocol are being used.
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
 
+> The command below uses test data available from the [github repository](https://github.com/epi2me-labs/wf-artic/tree/master/test_data)
+> It can be obtained with `git clone https://github.com/epi2me-labs/wf-artic`.
+
 ```
 # run the pipeline with the test data
 OUTPUT=my_artic_output
