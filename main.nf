@@ -109,8 +109,13 @@ process allVariants {
     output:
         tuple file("all_variants.vcf.gz"), file("all_variants.vcf.gz.tbi")
     """
-    bcftools merge -o all_variants.vcf.gz -O z *.vcf.gz
-    bcftools index -t all_variants.vcf.gz
+    if [[ \$(ls *.vcf.gz | wc -l) == "1" ]]; then
+        mv *.vcf.gz all_variants.vcf.gz
+        mv *.vcf.gz.tbi all_variants.vcf.gz.tbi
+    else 
+        bcftools merge -o all_variants.vcf.gz -O z *.vcf.gz
+        bcftools index -t all_variants.vcf.gz
+    fi
     """
 }
 
@@ -261,10 +266,10 @@ workflow {
             .set{ samples }
     } else if (not_barcoded) {
         println("Found fastq files, assuming single sample")
-        sample_sheet = Channel.from([tuple(params.fastq, params.samples)])
+        sample = (params.samples == null) ? "unknown" : params.samples
         Channel
             .fromPath(params.fastq, type: 'dir', maxDepth:1)
-            .map { path -> tuple(path, params.samples) }
+            .map { path -> tuple(path, sample) }
             .set{ samples }
     }
     results = pipeline(samples, scheme_directory, reference, primers)

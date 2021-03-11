@@ -124,6 +124,8 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
         xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
         ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
 
+        print("------------", sample)
+        print(df)
         plot = points.points(
             xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
             title="{}: {:.0f}X, {:.1f}% > {}X".format(
