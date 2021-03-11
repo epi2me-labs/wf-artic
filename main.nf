@@ -158,6 +158,7 @@ workflow pipeline {
         reference
         primers
     main:
+        samples.view()
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
         // collate consensus and variants
@@ -261,12 +262,14 @@ workflow {
             .set{ samples }
     } else if (not_barcoded) {
         println("Found fastq files, assuming single sample")
-        sample_sheet = Channel.of([$params.fastq, $params.samples])
+        sample_sheet = Channel.from([tuple(params.fastq, params.samples)])
+        sample_sheet.view()
         Channel
-            .fromPath($params.fastq, type: 'dir', maxdepth:1)
-            .join(sample_sheet)
+            .fromPath(params.fastq, type: 'dir', maxDepth:1)
+            .map { path -> tuple(path, params.samples) }
             .set{ samples }
     }
+    //samples.view()
     results = pipeline(samples, scheme_directory, reference, primers)
-    output(results)
+    //output(results)
 }
