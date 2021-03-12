@@ -13,13 +13,15 @@ threads=$7
 function mock_artic {
     # write an empty VCF
     echo "Mocking artic results"
+    TAB="$(echo -e '\t')"
     cat << EOF |
 ##fileformat=VCFv4.2
 ##source=Longshot v0.4.0
-#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+#CHROM${TAB}POS${TAB}ID${TAB}REF${TAB}ALT${TAB}QUAL${TAB}FILTER${TAB}INFO${TAB}FORMAT${TAB}SAMPLE
 EOF
     bgzip > "${sample_name}.pass.vcf.gz"
-    touch "${sample_name}.consensus.fasta"
+    # This is picked up later in process allConsensus
+    echo -e ">${sample_name} Artic-Fail\nN" > "${sample_name}.consensus.fasta"
 }
 
 # name everything by the sample rather than barcode
@@ -46,7 +48,7 @@ zcat "${sample_name}.pass.vcf.gz" | sed "s/SAMPLE/${sample_name}/" | bgzip > "${
 bcftools index -t "${sample_name}.pass.named.vcf.gz"
 
 # rename the consensus sequence
-sed -i "s/^>.*/>$sample_name/" "${sample_name}.consensus.fasta"
+sed -i "s/^>\S*/>${sample_name}/" "${sample_name}.consensus.fasta"
 
 # calculate depth stats. Final output is single file annotated with primer set and sample name
 for i in 1 2; do

@@ -77,10 +77,11 @@ process report {
         file "read_stats/*"
         file "nextclade.json"
         file "vcf_stats/*"
+        file "consensus_status.txt"
     output:
         file "summary_report.html"
     """
-    report.py nextclade.json summary_report.html \
+    report.py nextclade.json consensus_status.txt summary_report.html \
         --min_len $params._min_len --max_len $params._max_len \
         --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/*
@@ -95,8 +96,12 @@ process allConsensus {
         file "*"
     output:
         file "all_consensus.fasta"
+        file "consensus_status.txt"
     """
     ls *.consensus.fasta | xargs cat > all_consensus.fasta
+    grep "^>" all_consensus.fasta \
+        | awk 'BEGIN{OFS="\\t"; print "sample\\tpass"}{print substr(\$1, 2), \$2!="Artic-Fail"}' \
+        >> consensus_status.txt
     """
 }
 
@@ -170,14 +175,15 @@ workflow pipeline {
         tmp = runArtic.out[1].toList().transpose().toList() // surely theres another way?
         all_variants = allVariants(tmp)
         // nextclade
-        clades = nextclade(all_consensus, reference, primers)
+        clades = nextclade(all_consensus[0], reference, primers)
         // report
         html_doc = report(
             runArtic.out[2].collect(),
             read_summaries.collect(), 
             clades.collect(), 
-            runArtic.out[3].collect())
-        results = all_consensus.concat(all_variants[0].flatten(), html_doc)
+            runArtic.out[3].collect(),
+            all_consensus[1])
+        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), html_doc)
     emit:
         results
 }

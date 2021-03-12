@@ -9,7 +9,7 @@ from aplanat import annot, bars, gridplot, hist, lines, points, report
 from aplanat.util import Colors
 from aplanat.components import bcfstats
 from bokeh.layouts import gridplot, layout
-from bokeh.models import Panel, Tabs
+from bokeh.models import Panel, Tabs, Range1d
 import numpy as np
 import pandas as pd
 
@@ -22,7 +22,8 @@ def read_files(summaries):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("nextclade", help="nexclade json output file")
+    parser.add_argument("nextclade", help="nextclade json output file")
+    parser.add_argument("status", help="artic status file")
     parser.add_argument("output", help="Report output filename")
     parser.add_argument("--depths", nargs='+', required=True, help="Depth summary files")
     parser.add_argument("--summaries", nargs='+', required=True, help="Sequencing summary files")
@@ -99,6 +100,37 @@ This section displays basic QC metrics indicating read data quality.
         layout(
             [[length_hist, q_hist], [bc_counts]],
             sizing_mode="stretch_width"))
+
+    section = report_doc.add_section()
+    section.markdown("""
+### Artic Analysis status
+The panel below lists samples which failed to produce valid results from the
+primary ARTIC analysis. Samples not listed here were analysed successfully,
+but may still contain inconclusive results. See the following sections for
+further indications of failed or inconclusive results.
+""")
+    status = pd.read_csv(args.status, sep='\t')
+    print("hellllooo")
+    failed = status.loc[status['pass'] == 0]
+    if len(failed) == 0:
+        fail_list = "All samples analysed successfully"
+    else:
+        fail_list = failed['sample'].str.cat(sep=', ')
+    print(fail_list)
+    section.markdown("""
+```{}```
+""".format(fail_list))
+    fail_percentage = 100 * len(failed) / len(status)
+    classes = ['Success', 'Analysis Failed']
+    values = [100 - fail_percentage, fail_percentage]
+    colors = ['darkolivegreen', 'maroon']
+    plot = bars.single_hbar(
+        values, classes, colors,
+        title="Failed analyses",
+        x_axis_label = "%age Samples")
+    plot.x_range= Range1d(0, 140)
+    section.plot(plot)
+
 
     section = report_doc.add_section()
     section.markdown('''
