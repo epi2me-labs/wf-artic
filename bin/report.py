@@ -1,19 +1,19 @@
 #!/usr/bin/env python
+"""Create report file."""
 
 import argparse
-import glob
-import os
 
-import aplanat
-from aplanat import annot, bars, gridplot, hist, lines, points, report
-from aplanat.util import Colors
+from aplanat import annot, bars, hist, points, report
 from aplanat.components import bcfstats, nextclade
+from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
-from bokeh.models import Panel, Tabs, Range1d
+from bokeh.models import Panel, Range1d, Tabs
 import numpy as np
 import pandas as pd
 
+
 def read_files(summaries):
+    """Read a set of files and join to single dataframe."""
     dfs = list()
     for fname in sorted(summaries):
         dfs.append(pd.read_csv(fname, sep="\t"))
@@ -21,20 +21,38 @@ def read_files(summaries):
 
 
 def main():
+    """Run entry point."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("nextclade", help="nextclade json output file")
-    parser.add_argument("status", help="artic status file")
-    parser.add_argument("output", help="Report output filename")
-    parser.add_argument("--depths", nargs='+', required=True, help="Depth summary files")
-    parser.add_argument("--summaries", nargs='+', required=True, help="Sequencing summary files")
-    parser.add_argument("--bcftools_stats", nargs='+', required=True, help="Outputs from bcftools stats")
-    parser.add_argument("--min_len", default=300, type=int, help="Minimum read length")
-    parser.add_argument("--max_len", default=700, type=int, help="Maximum read length")
+    parser.add_argument(
+        "nextclade",
+        help="nextclade json output file")
+    parser.add_argument(
+        "status",
+        help="artic status file")
+    parser.add_argument(
+        "output",
+        help="Report output filename")
+    parser.add_argument(
+        "--depths", nargs='+', required=True,
+        help="Depth summary files")
+    parser.add_argument(
+        "--summaries", nargs='+', required=True,
+        help="Sequencing summary files")
+    parser.add_argument(
+        "--bcftools_stats", nargs='+', required=True,
+        help="Outputs from bcftools stats")
+    parser.add_argument(
+        "--min_len", default=300, type=int,
+        help="Minimum read length")
+    parser.add_argument(
+        "--max_len", default=700, type=int,
+        help="Maximum read length")
     args = parser.parse_args()
 
     report_doc = report.HTMLReport(
         "SARS-CoV-2 ARTIC Sequencing report",
-        "Results generated through the wf-artic nextflow workflow provided by Oxford Nanopore Technologies")
+        ("Results generated through the wf-artic nextflow workflow "
+            "provided by Oxford Nanopore Technologies"))
     section = report_doc.add_section()
 
     section.markdown('''
@@ -56,7 +74,8 @@ This section displays basic QC metrics indicating read data quality.
         xlim=(0, 2000))
     length_hist = annot.marker_vline(
         length_hist, args.min_len,
-        label="Min: {}".format(args.min_len), text_baseline='bottom', color='grey')
+        label="Min: {}".format(args.min_len), text_baseline='bottom',
+        color='grey')
     length_hist = annot.marker_vline(
         length_hist, args.max_len,
         label="Max: {}".format(args.max_len), text_baseline='top')
@@ -87,12 +106,16 @@ This section displays basic QC metrics indicating read data quality.
         .sort_index()
         .reset_index()
         .rename(
-            columns={'index':'sample', 'sample_name':'count'})
+            columns={'index': 'sample', 'sample_name': 'count'})
         )
 
     bc_counts = bars.simple_bar(
-        barcode_counts['sample'].astype(str), barcode_counts['count'], colors=[Colors.cerulean]*len(barcode_counts),
-        title='Number of reads per barcode (filtered by {} < length < {})'.format(args.min_len, args.max_len),
+        barcode_counts['sample'].astype(str), barcode_counts['count'],
+        colors=[Colors.cerulean]*len(barcode_counts),
+        title=(
+            'Number of reads per barcode '
+            '(filtered by {} < length < {})'.format(
+                args.min_len, args.max_len)),
         plot_width=None
     )
     bc_counts.xaxis.major_label_orientation = 3.14/2
@@ -110,13 +133,11 @@ but may still contain inconclusive results. See the following sections for
 further indications of failed or inconclusive results.
 """)
     status = pd.read_csv(args.status, sep='\t')
-    print("hellllooo")
     failed = status.loc[status['pass'] == 0]
     if len(failed) == 0:
         fail_list = "All samples analysed successfully"
     else:
         fail_list = failed['sample'].str.cat(sep=', ')
-    print(fail_list)
     section.markdown("""
 ```{}```
 """.format(fail_list))
@@ -127,18 +148,17 @@ further indications of failed or inconclusive results.
     plot = bars.single_hbar(
         values, classes, colors,
         title="Failed analyses",
-        x_axis_label = "%age Samples")
-    plot.x_range= Range1d(0, 140)
+        x_axis_label="%age Samples")
+    plot.x_range = Range1d(0, 140)
     section.plot(plot)
-
 
     section = report_doc.add_section()
     section.markdown('''
 ### Genome coverage
 Plots below indicate depth of coverage from data used within the Artic analysis
-coloured by amplicon pool. For adequate variant calling depth should be at least
-30X in any region. Pool-1 reads are shown in light-blue, Pool-2 reads are dark grey
-(a similarly for forward and reverse reads respectively).
+coloured by amplicon pool. For adequate variant calling depth should be at
+least 30X in any region. Pool-1 reads are shown in light-blue, Pool-2 reads are
+dark grey (a similarly for forward and reverse reads respectively).
 ''')
 
     # depth summary by amplicon pool
@@ -153,8 +173,8 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
 
         # primer set plot
         pset = df['primer_set']
-        xs = [df.loc[(pset == i) & bc]['pos'] for i in (1,2)]
-        ys = [df.loc[(pset == i) & bc]['depth'] for i in (1,2)]
+        xs = [df.loc[(pset == i) & bc]['pos'] for i in (1, 2)]
+        ys = [df.loc[(pset == i) & bc]['depth'] for i in (1, 2)]
 
         plot = points.points(
             xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
@@ -162,7 +182,7 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
                 sample, depth.mean(), depth_thresh, depth_lim),
             height=200, width=400,
             x_axis_label='position', y_axis_label='depth',
-            ylim=(0,300))
+            ylim=(0, 300))
         plots_pool.append(plot)
 
         # fwd/rev
@@ -175,7 +195,7 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
                 sample, depth.mean(), depth_thresh, depth_lim),
             height=200, width=400,
             x_axis_label='position', y_axis_label='depth',
-            ylim=(0,300))
+            ylim=(0, 300))
         plots_orient.append(plot)
 
     tab1 = Panel(
@@ -198,17 +218,20 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
     section.markdown('''
 ### About
 
-**Oxford Nanopore Technologies products are not intended for use for health assessment
-or to diagnose, treat, mitigate, cure or prevent any disease or condition.**
+**Oxford Nanopore Technologies products are not intended for use for health
+assessment or to diagnose, treat, mitigate, cure or prevent any disease or
+condition.**
 
-This report was produced using the [epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic).
-The workflow can be run using `nextflow epi2me-labs/wf-artic --help`
+This report was produced using the
+[epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic). The workflow
+can be run using `nextflow epi2me-labs/wf-artic --help`
 
 ---
 ''')
 
     # write report
     report_doc.write("summary_report.html")
+
 
 if __name__ == "__main__":
     main()
