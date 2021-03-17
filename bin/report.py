@@ -7,7 +7,7 @@ import os
 import aplanat
 from aplanat import annot, bars, gridplot, hist, lines, points, report
 from aplanat.util import Colors
-from aplanat.components import bcfstats
+from aplanat.components import bcfstats, nextclade
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Tabs, Range1d
 import numpy as np
@@ -189,15 +189,9 @@ coloured by amplicon pool. For adequate variant calling depth should be at least
     section = report_doc.add_section()
     bcfstats.full_report(args.bcftools_stats, report=section)
 
-    section = report_doc.add_section()
-    section.markdown('''
-### NextClade analysis
-The following view is produced by the [nextclade](https://clades.nextstrain.org/) software.
-''')
-    with open(args.nextclade, encoding='utf8') as fh:
-        nc = fh.read()
-    nextclade = report.NextClade(nc)
-    section.plot(nextclade)
+    # NextClade analysis
+    section = report_doc.add_section(
+        section=nextclade.NextClade(args.nextclade))
 
     # Footer section
     section = report_doc.add_section()
