@@ -247,10 +247,26 @@ workflow {
         type:'file', checkIfExists:true)
 
     // resolve whether we have demultiplexed data or single sample
-    barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
     not_barcoded = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
+    // remove empty barcode_dirs
+    barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
+    valid_barcode_dirs = []
+    invalid_barcode_dirs = []
+    for (d in barcode_dirs) {
+        if(!file("${d}/*.fastq*", type:'file', checkIfExists:true)) {
+            invalid_barcode_dirs << d
+        } else {
+            valid_barcode_dirs << d
+        }
+    }
     if (barcode_dirs) {
         println("Found barcode directories")
+        if (invalid_barcode_dirs.size() > 0) {
+            println("Some barcode directories did not contain .fastq(.gz) files:")
+            for (d in invalid_barcode_dirs) {
+                println("- ${d}")
+            }
+        }
         if (params.samples) {
             sample_sheet = Channel
                 .fromPath(params.samples, checkIfExists: true)
@@ -259,12 +275,12 @@ workflow {
         } else {
             // just map directory name to self
             sample_sheet = Channel
-                .fromPath(barcode_dirs)
+                .fromPath(valid_barcode_dirs)
                 .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
                 .map { path -> tuple(path.baseName, path.baseName) }
         }
         Channel
-            .fromPath(barcode_dirs)
+            .fromPath(valid_barcode_dirs)
             .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
             .map { path -> tuple(path.baseName, path) }
             .join(sample_sheet)
