@@ -22,7 +22,8 @@ def main():
     with open(args.bed) as fh, open(args.output, 'w') as out_fh:
         out_fh.write("Country (Institute),Target,Oligonucleotide,Sequence\n")
         for line in fh.readlines():
-            rname, start, end, name, pool, orient = line.split('\t')
+            # the V1200 bed doesn't specific orientation
+            rname, start, end, name, pool, *_ = line.split('\t')
             pname = '{}:{}-{}'.format(rname, start, end)
             seq = refs[rname][int(start):int(end)]
             out_fh.write(','.join((scheme, pname, name, seq)))
