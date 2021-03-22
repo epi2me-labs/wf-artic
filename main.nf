@@ -35,6 +35,35 @@ Notes:
 """
 }
 
+
+process checkSampleSheet {
+    label "artic"
+    cpus 1
+    input:
+        file "sample_sheet.txt"
+    output:
+        file "samples.txt"
+    """
+#!/usr/bin/env python
+import pandas as pd
+try:
+    samples = pd.read_csv("sample_sheet.txt", sep=None)
+    if 'barcode' not in samples.columns or 'sample_name' not in samples.columns:
+        raise IOError()
+except Exception:
+    raise IOError(
+        "Could not parse sample sheet, it must contain two columns "
+        "named 'barcode' and 'sample_name'.")
+# check duplicates
+dup_bc = samples['barcode'].duplicated()
+dup_sample = samples['sample_name'].duplicated()
+if any(dup_bc) or any(dup_sample):
+    raise IOError(
+        "Sample sheet contains duplicate values.")
+samples.to_csv("samples.txt", sep=",", index=False)
+    """
+}
+
 process preArticQC {
     label "artic"
     cpus 1
@@ -245,6 +274,14 @@ workflow {
     primers = file(
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
         type:'file', checkIfExists:true)
+    // check sample sheet
+    sample_sheet = null
+    if (params.samples) {
+        sample_sheet = Channel.fromPath(params.samples, checkIfExists: true)
+        sample_sheet = checkSampleSheet(sample_sheet)
+            .splitCsv(header: true)
+            .map { row -> tuple(row.barcode, row.sample_name) }
+    }
 
     // resolve whether we have demultiplexed data or single sample
     not_barcoded = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
@@ -267,12 +304,7 @@ workflow {
                 println("- ${d}")
             }
         }
-        if (params.samples) {
-            sample_sheet = Channel
-                .fromPath(params.samples, checkIfExists: true)
-                .splitCsv(header: true)
-                .map { row -> tuple(row.barcode, row.sample_name) }
-        } else {
+        if (!sample_sheet) {
             // just map directory name to self
             sample_sheet = Channel
                 .fromPath(valid_barcode_dirs)
