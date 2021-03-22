@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Added
-- Check format of sample sheet before executing main workflow
+- Check format of sample sheet before executing main workflow.
+### Fixed
+- Parsing of V1200 .bed file for nextclade report.
+- Empty barcode directories are ignored.
 
 ## [v0.1.2]
 ### Fixed
