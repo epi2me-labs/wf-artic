@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [v0.1.3]
 ### Added
 - Check format of sample sheet before executing main workflow.
 ### Fixed
 - Parsing of V1200 .bed file for nextclade report.
 - Empty barcode directories are ignored.
+- Nextclade report component upgraded to better handle poor data.
 
 ## [v0.1.2]
 ### Fixed
