@@ -108,9 +108,9 @@ process report {
         file "vcf_stats/*"
         file "consensus_status.txt"
     output:
-        file "summary_report.html"
+        file "wf-artic-report.html"
     """
-    report.py nextclade.json consensus_status.txt summary_report.html \
+    report.py nextclade.json consensus_status.txt wf-artic-report.html \
         --min_len $params._min_len --max_len $params._max_len \
         --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/*

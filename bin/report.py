@@ -230,7 +230,7 @@ can be run using `nextflow epi2me-labs/wf-artic --help`
 ''')
 
     # write report
-    report_doc.write("summary_report.html")
+    report_doc.write(args.output)
 
 
 if __name__ == "__main__":
