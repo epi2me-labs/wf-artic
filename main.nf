@@ -19,6 +19,7 @@ Options:
     --medaka_model      STR     Medaka model name (default: $params.medaka_model)
     --min_len           INT     Minimum read length (default: set by scheme)
     --max_len           INT     Maximum read length (default: set by scheme)
+    --report_depth      INT     Min. depth for percentage coverage (default: $params.report_depth)
     --scheme_version    STR     Primer scheme ($valid_schemes)
                                 indicating correspondence between
                                 barcodes and sample names. (default: $params.scheme_version)
@@ -111,8 +112,8 @@ process report {
         file "wf-artic-report.html"
     """
     report.py nextclade.json consensus_status.txt wf-artic-report.html \
-        --min_len $params._min_len --max_len $params._max_len \
-        --depths depth_stats/* --summaries read_stats/* \
+        --min_len $params._min_len --max_len $params._max_len --report_depth \
+        $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/*
     """
 }

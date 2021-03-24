@@ -47,6 +47,10 @@ def main():
     parser.add_argument(
         "--max_len", default=700, type=int,
         help="Maximum read length")
+    parser.add_argument(
+        "--report_depth", default=100, type=int,
+        help="Depth at which to provide a coverage statistics, e.g. 76% of genome covered at `report_depth`"
+    )
     args = parser.parse_args()
 
     report_doc = report.HTMLReport(
@@ -170,7 +174,7 @@ comparing depth across samples.***
     plots_pool = list()
     plots_orient = list()
     plots_combined = list()
-    depth_lim = 100
+    depth_lim = args.report_depth
     for sample in sorted(df['sample_name'].unique()):
         bc = df['sample_name'] == sample
         depth = df[bc].groupby('pos').sum().reset_index()
