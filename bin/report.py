@@ -3,7 +3,7 @@
 
 import argparse
 
-from aplanat import annot, bars, hist, points, report
+from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
@@ -138,13 +138,14 @@ further indications of failed or inconclusive results.
         fail_list = "All samples analysed successfully"
     else:
         fail_list = failed['sample'].str.cat(sep=', ')
+    print(fail_list)
     section.markdown("""
 ```{}```
 """.format(fail_list))
     fail_percentage = 100 * len(failed) / len(status)
     classes = ['Success', 'Analysis Failed']
     values = [100 - fail_percentage, fail_percentage]
-    colors = ['darkolivegreen', 'maroon']
+    colors = ['#54B8B1', '#EF4135']
     plot = bars.single_hbar(
         values, classes, colors,
         title="Failed analyses",
@@ -156,53 +157,89 @@ further indications of failed or inconclusive results.
     section.markdown('''
 ### Genome coverage
 Plots below indicate depth of coverage from data used within the Artic analysis
-coloured by amplicon pool. For adequate variant calling depth should be at
-least 30X in any region. Pool-1 reads are shown in light-blue, Pool-2 reads are
-dark grey (a similarly for forward and reverse reads respectively).
+coloured by amplicon pool.
+For adequate variant calling depth should be at least 30X in any region.
+
+***NB: To better display all possible data, the depth axes of the plots below
+are not tied between plots for different samples. Care should be taken in
+comparing depth across samples.***
 ''')
 
     # depth summary by amplicon pool
     df = read_files(args.depths)
     plots_pool = list()
     plots_orient = list()
+    plots_combined = list()
     depth_lim = 100
     for sample in sorted(df['sample_name'].unique()):
         bc = df['sample_name'] == sample
-        depth = df[bc].groupby('pos')['depth'].sum()
-        depth_thresh = 100*(depth >= depth_lim).sum() / len(depth)
+        depth = df[bc].groupby('pos').sum().reset_index()
+        depth_thresh = \
+            100*(depth['depth'] >= depth_lim).sum() / len(depth['depth'])
+        depth_mean = depth['depth'].mean()
+
+        # total depth plot
+        # plot line just to get aplanat niceities
+        p = lines.line(
+            [depth['pos']], [depth['depth']], colors=[Colors.cerulean],
+            title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                sample, depth_mean, depth_thresh, depth_lim),
+            height=250, width=400,
+            x_axis_label='position', y_axis_label='depth',
+            )
+        p.varea(
+            x=depth['pos'], y1=0.1, y2=depth['depth'],
+            fill_color=Colors.cerulean)
+        plots_combined.append(p)
+
+        # fwd/rev
+        xs = [depth['pos'], depth['pos']]
+        ys = [depth['depth_fwd'], depth['depth_rev']]
+        names = ['fwd', 'rev']
+        colors = [Colors.dark_gray, Colors.verdigris]
+
+        p = lines.line(
+            xs, ys, colors=colors, names=names,
+            title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                sample, depth_mean, depth_thresh, depth_lim),
+            height=250, width=400,
+            x_axis_label='position', y_axis_label='depth')
+        for x, y, name, color in zip(xs, ys, names, colors):
+            p.varea(
+                x=x, y1=0, y2=y, legend_label=name,
+                fill_color=color, alpha=0.7,
+                muted_color=color, muted_alpha=0.2)
+        p.legend.click_policy = 'mute'
+        plots_orient.append(p)
 
         # primer set plot
         pset = df['primer_set']
         xs = [df.loc[(pset == i) & bc]['pos'] for i in (1, 2)]
         ys = [df.loc[(pset == i) & bc]['depth'] for i in (1, 2)]
+        names = ['pool-1', 'pool-2']
+        colors = [Colors.light_cornflower_blue, Colors.feldgrau]
 
-        plot = points.points(
-            xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
+        p = lines.line(
+            xs, ys, colors=colors, names=names,
             title="{}: {:.0f}X, {:.1f}% > {}X".format(
-                sample, depth.mean(), depth_thresh, depth_lim),
-            height=200, width=400,
-            x_axis_label='position', y_axis_label='depth',
-            ylim=(0, 300))
-        plots_pool.append(plot)
-
-        # fwd/rev
-        data = df[bc].groupby('pos').sum().reset_index()
-        xs = [data['pos'], data['pos']]
-        ys = [data['depth_fwd'], data['depth_rev']]
-        plot = points.points(
-            xs, ys, colors=[Colors.light_cornflower_blue, Colors.feldgrau],
-            title="{}: {:.0f}X, {:.1f}% > {}X".format(
-                sample, depth.mean(), depth_thresh, depth_lim),
-            height=200, width=400,
-            x_axis_label='position', y_axis_label='depth',
-            ylim=(0, 300))
-        plots_orient.append(plot)
+                sample, depth_mean, depth_thresh, depth_lim),
+            height=250, width=400,
+            x_axis_label='position', y_axis_label='depth')
+        for x, y, name, color in zip(xs, ys, names, colors):
+            p.varea(
+                x=x, y1=0, y2=y, legend_label=name,
+                fill_color=color, alpha=0.7,
+                muted_color=color, muted_alpha=0.2)
+        p.legend.click_policy = 'mute'
+        plots_pool.append(p)
 
     tab1 = Panel(
-        child=gridplot(plots_pool, ncols=3), title="By amplicon pool")
+        child=gridplot(plots_combined, ncols=3), title="Coverage Plot")
     tab2 = Panel(
+        child=gridplot(plots_pool, ncols=3), title="By amplicon pool")
+    tab3 = Panel(
         child=gridplot(plots_orient, ncols=3), title="By read orientation")
-    cover_panel = Tabs(tabs=[tab1, tab2])
+    cover_panel = Tabs(tabs=[tab1, tab2, tab3])
     section.plot(cover_panel)
 
     # canned VCF stats report component
@@ -218,13 +255,13 @@ dark grey (a similarly for forward and reverse reads respectively).
     section.markdown('''
 ### About
 
-**Oxford Nanopore Technologies products are not intended for use for health
-assessment or to diagnose, treat, mitigate, cure or prevent any disease or
-condition.**
+**Oxford Nanopore Technologies products are not intended for use for
+health assessment or to diagnose, treat, mitigate, cure or prevent
+any disease or condition.**
 
 This report was produced using the
-[epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic). The workflow
-can be run using `nextflow epi2me-labs/wf-artic --help`
+[epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic).
+The workflow can be run using `nextflow epi2me-labs/wf-artic --help`
 
 ---
 ''')
