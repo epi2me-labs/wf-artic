@@ -49,7 +49,9 @@ def main():
         help="Maximum read length")
     parser.add_argument(
         "--report_depth", default=100, type=int,
-        help="Depth at which to provide a coverage statistics, e.g. 76% of genome covered at `report_depth`"
+        help=(
+            "Depth at which to provide a coverage statistics, "
+            "e.g. 76% of genome covered at `report_depth`")
     )
     args = parser.parse_args()
 
