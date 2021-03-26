@@ -20,6 +20,7 @@ Options:
     --min_len           INT     Minimum read length (default: set by scheme)
     --max_len           INT     Maximum read length (default: set by scheme)
     --report_depth      INT     Min. depth for percentage coverage (default: $params.report_depth)
+                                (e.g. 89% genome covered at > `report_depth`)
     --scheme_version    STR     Primer scheme ($valid_schemes)
                                 indicating correspondence between
                                 barcodes and sample names. (default: $params.scheme_version)
