@@ -94,6 +94,7 @@ variants of the ARTIC protocol are being used.
 - `min_len` Minimum read length (default: set by scheme)
 - `max_len` Maximum read length (default: set by scheme)
 - `scheme_version` Primer scheme ([V1, V2, V3, V1200]
+- `report_depth` Min. depth for percentage coverage (default: 100), (e.g. 89% genome covered at > report_depth)
 
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
