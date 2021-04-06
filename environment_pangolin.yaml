@@ -1,0 +1,7 @@
+name: epi2melabs-pangolin
+channels:
+    - bioconda
+    - conda-forge
+    - defaults
+dependencies:
+    - pangolin >=2.3.8
