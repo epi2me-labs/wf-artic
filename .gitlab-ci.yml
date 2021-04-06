@@ -5,3 +5,13 @@ include:
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/sars-samples-demultiplexed/ --samples test_data/sample_sheet"
 
+
+# pangolin to dockerhub, we don't expect to change this often so a simple manual build
+release-pangolin:
+    stage: custom-builds
+    when: manual
+    script:
+        - echo ${DOCKERHUB_TOKEN} | docker login --username epi2melabs --password-stdin
+        - LATEST="${DOCKERHUB_NAMESPACE}/pangolin:latest"
+        - docker build --no-cache -t "${LATEST}" -f Dockerfile . --build-arg ENVFILE=environment_pangolin.yaml
+        - docker push ${LATEST}

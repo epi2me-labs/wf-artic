@@ -107,12 +107,13 @@ process report {
         file "depth_stats/*"
         file "read_stats/*"
         file "nextclade.json"
+        file "pangolin.csv"
         file "vcf_stats/*"
         file "consensus_status.txt"
     output:
         file "wf-artic-report.html"
     """
-    report.py nextclade.json consensus_status.txt wf-artic-report.html \
+    report.py nextclade.json pangolin.csv consensus_status.txt wf-artic-report.html \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/*
@@ -174,6 +175,20 @@ process nextclade {
 }
 
 
+process pangolin {
+
+    label "pangolin"
+    cpus 1
+    input:
+        file "consensus.fasta"
+    output:
+        file "lineage_report.csv"
+    """
+    pangolin consensus.fasta
+    """
+}
+
+
 // See https://github.com/nextflow-io/nextflow/issues/1636
 // This is the only way to publish files from a workflow whilst
 // decoupling the publish from the process steps.
@@ -207,11 +222,14 @@ workflow pipeline {
         all_variants = allVariants(tmp)
         // nextclade
         clades = nextclade(all_consensus[0], reference, primers)
+        // pangolin
+        lineages = pangolin(all_consensus[0])
         // report
         html_doc = report(
             runArtic.out[2].collect(),
             read_summaries.collect(), 
-            clades.collect(), 
+            clades.collect(),
+            lineages.collect(),
             runArtic.out[3].collect(),
             all_consensus[1])
         results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), html_doc)

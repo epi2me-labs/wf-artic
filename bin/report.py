@@ -27,6 +27,9 @@ def main():
         "nextclade",
         help="nextclade json output file")
     parser.add_argument(
+        "pangolin",
+        help="pangolin CSV output file")
+    parser.add_argument(
         "status",
         help="artic status file")
     parser.add_argument(
@@ -144,7 +147,6 @@ further indications of failed or inconclusive results.
         fail_list = "All samples analysed successfully"
     else:
         fail_list = failed['sample'].str.cat(sep=', ')
-    print(fail_list)
     section.markdown("""
 ```{}```
 """.format(fail_list))
@@ -255,6 +257,17 @@ comparing depth across samples.***
     # NextClade analysis
     section = report_doc.add_section(
         section=nextclade.NextClade(args.nextclade))
+
+    # Pangolin analysis
+    section = report_doc.add_section()
+    section.markdown('''
+### Lineage
+
+The table below reports the lineage of each sample as calculated by
+[pangolin](https://github.com/cov-lineages/pangolin).
+
+''')
+    section.table(pd.read_csv(args.pangolin), index=False)
 
     # Footer section
     section = report_doc.add_section()
