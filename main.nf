@@ -2,7 +2,12 @@
 
 nextflow.enable.dsl = 2
 
-valid_schemes = ["V1", "V2", "V3", "V1200"]
+valid_schemes = ["SARS-CoV-2", "spike-seq"]
+valid_scheme_versions = ["V1", "V2", "V3", "V1200"]
+
+if (params.scheme_name == "spike-seq") {
+    valid_scheme_versions = ["V1", "V2", "V3", "V4"]
+}
 
 def helpMessage(){
     log.info """
@@ -12,18 +17,22 @@ Usage:
     nextflow run main.nf [options]
 
 Options:
-    --fastq             DIR     Path to FASTQ directory (required)
-    --samples           FILE    CSV file with columns named `barcode` and `sample_name`
-                                (or simply a sample name for non-multiplexed data).
-    --out_dir           DIR     Path for output (default: $params.out_dir)
-    --medaka_model      STR     Medaka model name (default: $params.medaka_model)
-    --min_len           INT     Minimum read length (default: set by scheme)
-    --max_len           INT     Maximum read length (default: set by scheme)
-    --report_depth      INT     Min. depth for percentage coverage (default: $params.report_depth)
-                                (e.g. 89% genome covered at > `report_depth`)
-    --scheme_version    STR     Primer scheme ($valid_schemes)
-                                indicating correspondence between
-                                barcodes and sample names. (default: $params.scheme_version)
+    --fastq               DIR     Path to FASTQ directory (required)
+    --samples             FILE    CSV file with columns named `barcode` and `sample_name`
+                                  (or simply a sample name for non-multiplexed data).
+    --out_dir             DIR     Path for output (default: $params.out_dir)
+    --medaka_model        STR     Medaka model name (default: $params.medaka_model)
+    --min_len             INT     Minimum read length (default: set by scheme)
+    --max_len             INT     Maximum read length (default: set by scheme)
+    --scheme_name         STR     Scheme to use ($valid_schemes) (default: SARS-CoV-2)
+    --scheme_version      STR     Primer scheme version ($valid_scheme_versions)
+                                  (default: $params.scheme_version)
+    --report_depth        INT     Min. depth for percentage coverage (default: $params.report_depth)
+                                  (e.g. 89% genome covered at > `report_depth`)
+                                  indicating correspondence between
+    --genotype_variants   FILE    A VCF containing known variants to genotype.
+    --report_clade        BOOL    Show results of Nextclade analysis in report.
+    --report_lineage      BOOL    Show results of Pangolin analysis in report.
 
 Notes:
     If directories named "barcode*" are found under the `--fastq` directory the
@@ -90,12 +99,33 @@ process runArtic {
         tuple file("${sample_name}.pass.named.vcf.gz"), file("${sample_name}.pass.named.vcf.gz.tbi")
         file "${sample_name}.depth.txt"
         file "${sample_name}.pass.named.stats"
+        file "${sample_name}.sorted.bam"
+        file "${sample_name}.sorted.bam.bai"
     """
     run_artic.sh \
         ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.full_scheme_name} \
         ${task.cpus}
     bcftools stats ${sample_name}.pass.named.vcf.gz > ${sample_name}.pass.named.stats 
+    """
+}
+
+
+process genotypeSummary {
+    // Produce a genotype summary spreadsheet
+    label "artic"
+    cpus 1
+    input:
+        tuple file(vcf), file(tbi)
+        file bam
+        file bam_index
+        tuple file(directory), val(sample_name)
+        file "reference.vcf"
+    output:
+        path "*_genotype_summary.csv", emit: summary
+    script:
+    """
+    genotype_summary.py -b $bam -v $vcf -d reference.vcf -o ${sample_name}_genotype_summary.csv
     """
 }
 
@@ -108,15 +138,24 @@ process report {
         file "read_stats/*"
         file "nextclade.json"
         file "pangolin.csv"
+        file "genotypes/*"
         file "vcf_stats/*"
         file "consensus_status.txt"
     output:
         file "wf-artic-report.html"
+    script:
+    def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
+    def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
+    def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     """
-    report.py nextclade.json pangolin.csv consensus_status.txt wf-artic-report.html \
+    echo "$pangolin"
+    echo "$nextclade"
+    report.py \
+        consensus_status.txt wf-artic-report.html \
+        $pangolin $nextclade \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
-        --bcftools_stats vcf_stats/*
+        --bcftools_stats vcf_stats/* $genotype
     """
 }
 
@@ -220,6 +259,14 @@ workflow pipeline {
         all_consensus = allConsensus(runArtic.out[0].collect())
         tmp = runArtic.out[1].toList().transpose().toList() // surely theres another way?
         all_variants = allVariants(tmp)
+        // genotype summary
+        if (params.genotype_variants) {
+            ref_variants = file(params.genotype_variants)
+            genotype_summary = genotypeSummary(
+                runArtic.out[1], runArtic.out[4], runArtic.out[5], samples, ref_variants).collect()
+        } else {
+            genotype_summary = Channel.fromPath('NO_FILE')
+        }
         // nextclade
         clades = nextclade(all_consensus[0], reference, primers)
         // pangolin
@@ -230,6 +277,7 @@ workflow pipeline {
             read_summaries.collect(), 
             clades.collect(),
             lineages.collect(),
+            genotype_summary.collect(),
             runArtic.out[3].collect(),
             all_consensus[1])
         results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), html_doc)
@@ -252,8 +300,13 @@ workflow {
         exit 1
     }
 
-    if (!valid_schemes.any { it == params.scheme_version}) {
-        println("`--scheme_version should be one of: $valid_schemes")
+    if (!valid_scheme_versions.any { it == params.scheme_version}) {
+        println("`--scheme_version should be one of: $valid_scheme_versions")
+        exit 1
+    }
+
+    if (params.scheme_name == "spike-seq" && !params.genotype_variants) {
+        println("`--genotype_variants` is required for scheme: 'spike-seq'")
         exit 1
     }
 
@@ -286,7 +339,7 @@ workflow {
     println("")
 
     params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
-    schemes = projectDir + '/data/primer_schemes' 
+    schemes = projectDir + '/data/primer_schemes'
     scheme_directory = file(schemes, type: 'dir', checkIfExists:true)
     reference = file(
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.reference.fasta",
