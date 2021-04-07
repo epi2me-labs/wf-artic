@@ -276,8 +276,8 @@ workflow {
             params._max_len = 700
         }
     } else {
-        params._min_len = params.min_len
-        params.remove('min_len')
+        params._max_len = params.max_len
+        params.remove('max_len')
     }
     println("")
     println("Parameter summary")
