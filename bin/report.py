@@ -12,11 +12,11 @@ import numpy as np
 import pandas as pd
 
 
-def read_files(summaries):
+def read_files(summaries, sep='\t'):
     """Read a set of files and join to single dataframe."""
     dfs = list()
     for fname in sorted(summaries):
-        dfs.append(pd.read_csv(fname, sep="\t"))
+        dfs.append(pd.read_csv(fname, sep=sep))
     return pd.concat(dfs)
 
 
@@ -24,17 +24,17 @@ def main():
     """Run entry point."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "nextclade",
-        help="nextclade json output file")
-    parser.add_argument(
-        "pangolin",
-        help="pangolin CSV output file")
-    parser.add_argument(
         "status",
         help="artic status file")
     parser.add_argument(
         "output",
         help="Report output filename")
+    parser.add_argument(
+        "--nextclade",
+        help="nextclade json output file")
+    parser.add_argument(
+        "--pangolin",
+        help="pangolin CSV output file")
     parser.add_argument(
         "--depths", nargs='+', required=True,
         help="Depth summary files")
@@ -44,6 +44,9 @@ def main():
     parser.add_argument(
         "--bcftools_stats", nargs='+', required=True,
         help="Outputs from bcftools stats")
+    parser.add_argument(
+        "--genotypes", nargs='+', required=False,
+        help="Genotyping summary files")
     parser.add_argument(
         "--min_len", default=300, type=int,
         help="Minimum read length")
@@ -58,10 +61,8 @@ def main():
     )
     args = parser.parse_args()
 
-    report_doc = report.HTMLReport(
-        "SARS-CoV-2 ARTIC Sequencing report",
-        ("Results generated through the wf-artic nextflow workflow "
-            "provided by Oxford Nanopore Technologies"))
+    report_doc = report.WFReport(
+        "SARS-CoV-2 ARTIC Sequencing report", "wf-artic")
     section = report_doc.add_section()
 
     section.markdown('''
@@ -255,35 +256,34 @@ comparing depth across samples.***
     bcfstats.full_report(args.bcftools_stats, report=section)
 
     # NextClade analysis
-    section = report_doc.add_section(
-        section=nextclade.NextClade(args.nextclade))
+    if args.nextclade is not None:
+        section = report_doc.add_section(
+            section=nextclade.NextClade(args.nextclade))
 
     # Pangolin analysis
-    section = report_doc.add_section()
-    section.markdown('''
+    if args.pangolin is not None:
+        section = report_doc.add_section()
+        section.markdown('''
 ### Lineage
 
 The table below reports the lineage of each sample as calculated by
 [pangolin](https://github.com/cov-lineages/pangolin).
 
 ''')
-    section.table(pd.read_csv(args.pangolin), index=False)
+        section.table(pd.read_csv(args.pangolin), index=False)
 
-    # Footer section
-    section = report_doc.add_section()
-    section.markdown('''
-### About
+    # Genotyping
+    if args.genotypes is not None:
+        section = report_doc.add_section()
+        section.markdown('''
+### Genotyping
 
-**Oxford Nanopore Technologies products are not intended for use for
-health assessment or to diagnose, treat, mitigate, cure or prevent
-any disease or condition.**
-
-This report was produced using the
-[epi2me-labs/wf-artic](https://github.com/epi2me-labs/wf-artic).
-The workflow can be run using `nextflow epi2me-labs/wf-artic --help`
-
----
+The table below lists whether candidate variants were determined to exist
+within each sample.
 ''')
+        df = read_files(args.genotypes, sep=',')
+        df = df[['sample', 'variant', 'variant_score', 'result']]
+        section.table(df, index=False)
 
     # write report
     report_doc.write(args.output)

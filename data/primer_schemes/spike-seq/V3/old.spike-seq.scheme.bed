@@ -1,0 +1,16 @@
+NC_045512.2	21076	21104	spike-seq_1_LEFT	spike-seq_1
+NC_045512.2	22014	22038	spike-seq_1_RIGHT	spike-seq_1
+NC_045512.2	21658	21682	spike-seq_2_LEFT	spike-seq_2
+NC_045512.2	22626	22650	spike-seq_2_RIGHT	spike-seq_2
+NC_045512.2	22516	22542	spike-seq_3_LEFT	spike-seq_1
+NC_045512.2	23190	23212	spike-seq_3_RIGHT	spike-seq_1
+NC_045512.2	22798	22821	spike-seq_4_LEFT	spike-seq_2
+NC_045512.2	23822	23847	spike-seq_4_RIGHT	spike-seq_2
+NC_045512.2	23444	23466	spike-seq_5_LEFT	spike-seq_1
+NC_045512.2	24444	24467	spike-seq_5_RIGHT	spike-seq_1
+NC_045512.2	24078	24100	spike-seq_6_LEFT	spike-seq_2
+NC_045512.2	25052	25076	spike-seq_6_RIGHT	spike-seq_2
+NC_045512.2	24697	24721	spike-seq_7_LEFT	spike-seq_1
+NC_045512.2	25647	25673	spike-seq_7_RIGHT	spike-seq_1
+NC_045512.2	25279	25301	spike-seq_8_LEFT	spike-seq_2
+NC_045512.2	26290	26315	spike-seq_8_RIGHT	spike-seq_2
