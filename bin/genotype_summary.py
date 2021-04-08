@@ -17,17 +17,17 @@ def read_vcf(fname):
     return df
 
 
-def create_genotype_summary(vcf_file, bam_file, variants_file):
+def create_genotype_summary(vcf_file, bam_file, variants_file, valid_coverage):
     """Merge the variants tsv file with the calls in the vcf."""
     # Grab sample name from vcf filename
-    sample = vcf_file.split('.')[0]
+    sample = vcf_file.split('.')[0]  # TODO: this is a bit flakey
 
     # Convert the calls from artic to a vcf
     try:
         df = read_vcf(vcf_file)
-        df['variant_score'] = df['QUAL']
     except Exception:
         df = pd.DataFrame(columns=vcf_cols)
+    df['variant_score'] = df['QUAL']
 
     # Read in the variants we have stored as a tsv
     # and add some meta fields
@@ -44,68 +44,59 @@ def create_genotype_summary(vcf_file, bam_file, variants_file):
 
     # Adjust fields depending on whether there is
     # a mutation present or not
-    df_merged['result'] = 'no_mutation'
-    df_merged.loc[~df_merged['variant_score'].isna(), 'result'] = 'mutation'
+    df_merged['result'] = 'Not present'
+    df_merged['coverage'] = 0
+    df_merged['status'] = 'Valid'
+    df_merged.loc[~df_merged['variant_score'].isna(), 'result'] = 'Present'
     df_merged.loc[df_merged['variant_score'].isna(), 'variant_score'] = 'N/A'
 
-    # Iterate over the merged variants and attempt to
-    # find the coverage for each retained variant
-    # TODO: this could go, the VCF from artic contains already depth info
+    # Amend status column based on coverage
     with pysam.AlignmentFile(bam_file, "rb") as bam:
         for index, row in df_merged.iterrows():
             try:
-                covered = len(list(bam.pileup(
-                    row['CHROM'], row["POS"], row["POS"] + 1, truncate=True)))
-            except ValueError:
-                covered = None
-            if not covered:
-                df_merged.loc[index, 'result'] = "no_amplification"
+                column = next(bam.pileup(
+                    row["CHROM"], row["POS"], row["POS"] + 1, truncate=True))
+            except Exception:
+                coverage = 0
+            else:
+                coverage = column.n
+            df_merged.loc[index, 'coverage'] = coverage
+            if coverage < valid_coverage:
+                status = "No data" if coverage == 0 else "Low coverage"
+                df_merged.loc[index, 'status'] = status
 
     return df_merged[
-        ['sample', 'variant', 'variant_score', 'result']
+        ['sample', 'variant', 'variant_score', 'coverage', 'result', 'status']
     ].sort_values(['sample', 'variant'])
 
 
-def main(vcf_file, bam_file, variants_file, outfile):
+def main():
     """Create the genotype summary output the result to file."""
-    result = create_genotype_summary(
-        vcf_file,
-        bam_file,
-        variants_file,
-    )
 
-    result.to_csv(outfile, index=False)
-
-
-def parse_args():
-    """Validate command line arguments."""
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "-v", "--vcf", required=True, type=str,
-        help="Path to 50x coverage filtered vcf"
-    )
+        help="Path to VCF file")
     parser.add_argument(
         "-b", "--bam", required=True, type=str,
-        help="Path to bam file"
-    )
+        help="Path to BAM file")
     parser.add_argument(
         "-d", "--variants", required=True, type=str,
-        help="Path to variants of interest file"
-    )
+        help="Path to variants of interest file")
     parser.add_argument(
-        "-o", "--outfile", required=True, type=str,
-        help="Path  to outfile"
-    )
+        "-o", "--outfile",
+        help="Path  to outfile")
+    parser.add_argument(
+        "--valid_coverage", type=int, default=20,
+        help="Coverage required for valid call.")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    result = create_genotype_summary(
+        args.vcf, args.bam, args.variants, args.valid_coverage)
+    result.to_csv(args.outfile, index=False)
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    main(
-        args.vcf,
-        args.bam,
-        args.variants,
-        args.outfile
-    )
+    main()
