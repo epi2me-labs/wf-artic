@@ -38,6 +38,10 @@ def create_genotype_summary(vcf_file, bam_file, variants_file, valid_coverage):
     # retaining the variants file overlaps
     df_merged = df_variants.merge(
         df, how='left', on=['CHROM', 'POS', 'REF', 'ALT'])
+    # the ARTIC VCF can have variants multiple times (from multiple PCR pools)
+    df_merged = df_merged \
+        .sort_values('variant_score', ascending=False) \
+        .drop_duplicates('variant')
 
     # Re-write sample name
     df_merged['sample'] = sample
