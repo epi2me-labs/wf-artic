@@ -33,6 +33,7 @@ Options:
     --genotype_variants   FILE    A VCF containing known variants to genotype.
     --report_clade        BOOL    Show results of Nextclade analysis in report.
     --report_lineage      BOOL    Show results of Pangolin analysis in report.
+    --report_coverage     BOOL    Show genome coverage traces in report. 
 
 Notes:
     If directories named "barcode*" are found under the `--fastq` directory the
@@ -119,13 +120,12 @@ process genotypeSummary {
         tuple file(vcf), file(tbi)
         file bam
         file bam_index
-        tuple file(directory), val(sample_name)
         file "reference.vcf"
     output:
-        path "*_genotype_summary.csv", emit: summary
+        file "*genotype.csv"
     script:
     """
-    genotype_summary.py -b $bam -v $vcf -d reference.vcf -o ${sample_name}_genotype_summary.csv
+    genotype_summary.py -b $bam -v $vcf -d reference.vcf -o ${vcf}.genotype.csv
     """
 }
 
@@ -147,12 +147,13 @@ process report {
     def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
     def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
+    def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     """
     echo "$pangolin"
     echo "$nextclade"
     report.py \
         consensus_status.txt wf-artic-report.html \
-        $pangolin $nextclade \
+        $pangolin $nextclade $coverage \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/* $genotype
@@ -263,7 +264,7 @@ workflow pipeline {
         if (params.genotype_variants) {
             ref_variants = file(params.genotype_variants)
             genotype_summary = genotypeSummary(
-                runArtic.out[1], runArtic.out[4], runArtic.out[5], samples, ref_variants).collect()
+                runArtic.out[1], runArtic.out[4], runArtic.out[5], ref_variants).collect()
         } else {
             genotype_summary = Channel.fromPath('NO_FILE')
         }

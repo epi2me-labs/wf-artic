@@ -57,11 +57,13 @@ def main():
         "--report_depth", default=100, type=int,
         help=(
             "Depth at which to provide a coverage statistics, "
-            "e.g. 76% of genome covered at `report_depth`")
-    )
+            "e.g. 76% of genome covered at `report_depth`"))
+    parser.add_argument(
+        "--hide_coverage", action="store_true",
+        help="Do not display coverage plots in report.")
     args = parser.parse_args()
 
-    report_doc = report.WFReport(
+    report_doc = report.HTMLReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic")
     section = report_doc.add_section()
 
@@ -162,8 +164,9 @@ further indications of failed or inconclusive results.
     plot.x_range = Range1d(0, 140)
     section.plot(plot)
 
-    section = report_doc.add_section()
-    section.markdown('''
+    if not args.hide_coverage:
+        section = report_doc.add_section()
+        section.markdown('''
 ### Genome coverage
 Plots below indicate depth of coverage from data used within the Artic analysis
 coloured by amplicon pool.
@@ -174,82 +177,82 @@ are not tied between plots for different samples. Care should be taken in
 comparing depth across samples.***
 ''')
 
-    # depth summary by amplicon pool
-    df = read_files(args.depths)
-    plots_pool = list()
-    plots_orient = list()
-    plots_combined = list()
-    depth_lim = args.report_depth
-    for sample in sorted(df['sample_name'].unique()):
-        bc = df['sample_name'] == sample
-        depth = df[bc].groupby('pos').sum().reset_index()
-        depth_thresh = \
-            100*(depth['depth'] >= depth_lim).sum() / len(depth['depth'])
-        depth_mean = depth['depth'].mean()
+        # depth summary by amplicon pool
+        df = read_files(args.depths)
+        plots_pool = list()
+        plots_orient = list()
+        plots_combined = list()
+        depth_lim = args.report_depth
+        for sample in sorted(df['sample_name'].unique()):
+            bc = df['sample_name'] == sample
+            depth = df[bc].groupby('pos').sum().reset_index()
+            depth_thresh = \
+                100*(depth['depth'] >= depth_lim).sum() / len(depth['depth'])
+            depth_mean = depth['depth'].mean()
 
-        # total depth plot
-        # plot line just to get aplanat niceities
-        p = lines.line(
-            [depth['pos']], [depth['depth']], colors=[Colors.cerulean],
-            title="{}: {:.0f}X, {:.1f}% > {}X".format(
-                sample, depth_mean, depth_thresh, depth_lim),
-            height=250, width=400,
-            x_axis_label='position', y_axis_label='depth',
-            )
-        p.varea(
-            x=depth['pos'], y1=0.1, y2=depth['depth'],
-            fill_color=Colors.cerulean)
-        plots_combined.append(p)
-
-        # fwd/rev
-        xs = [depth['pos'], depth['pos']]
-        ys = [depth['depth_fwd'], depth['depth_rev']]
-        names = ['fwd', 'rev']
-        colors = [Colors.dark_gray, Colors.verdigris]
-
-        p = lines.line(
-            xs, ys, colors=colors, names=names,
-            title="{}: {:.0f}X, {:.1f}% > {}X".format(
-                sample, depth_mean, depth_thresh, depth_lim),
-            height=250, width=400,
-            x_axis_label='position', y_axis_label='depth')
-        for x, y, name, color in zip(xs, ys, names, colors):
+            # total depth plot
+            # plot line just to get aplanat niceities
+            p = lines.line(
+                [depth['pos']], [depth['depth']], colors=[Colors.cerulean],
+                title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                    sample, depth_mean, depth_thresh, depth_lim),
+                height=250, width=400,
+                x_axis_label='position', y_axis_label='depth',
+                )
             p.varea(
-                x=x, y1=0, y2=y, legend_label=name,
-                fill_color=color, alpha=0.7,
-                muted_color=color, muted_alpha=0.2)
-        p.legend.click_policy = 'mute'
-        plots_orient.append(p)
+                x=depth['pos'], y1=0.1, y2=depth['depth'],
+                fill_color=Colors.cerulean)
+            plots_combined.append(p)
 
-        # primer set plot
-        pset = df['primer_set']
-        xs = [df.loc[(pset == i) & bc]['pos'] for i in (1, 2)]
-        ys = [df.loc[(pset == i) & bc]['depth'] for i in (1, 2)]
-        names = ['pool-1', 'pool-2']
-        colors = [Colors.light_cornflower_blue, Colors.feldgrau]
+            # fwd/rev
+            xs = [depth['pos'], depth['pos']]
+            ys = [depth['depth_fwd'], depth['depth_rev']]
+            names = ['fwd', 'rev']
+            colors = [Colors.dark_gray, Colors.verdigris]
 
-        p = lines.line(
-            xs, ys, colors=colors, names=names,
-            title="{}: {:.0f}X, {:.1f}% > {}X".format(
-                sample, depth_mean, depth_thresh, depth_lim),
-            height=250, width=400,
-            x_axis_label='position', y_axis_label='depth')
-        for x, y, name, color in zip(xs, ys, names, colors):
-            p.varea(
-                x=x, y1=0, y2=y, legend_label=name,
-                fill_color=color, alpha=0.7,
-                muted_color=color, muted_alpha=0.2)
-        p.legend.click_policy = 'mute'
-        plots_pool.append(p)
+            p = lines.line(
+                xs, ys, colors=colors, names=names,
+                title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                    sample, depth_mean, depth_thresh, depth_lim),
+                height=250, width=400,
+                x_axis_label='position', y_axis_label='depth')
+            for x, y, name, color in zip(xs, ys, names, colors):
+                p.varea(
+                    x=x, y1=0, y2=y, legend_label=name,
+                    fill_color=color, alpha=0.7,
+                    muted_color=color, muted_alpha=0.2)
+            p.legend.click_policy = 'mute'
+            plots_orient.append(p)
 
-    tab1 = Panel(
-        child=gridplot(plots_combined, ncols=3), title="Coverage Plot")
-    tab2 = Panel(
-        child=gridplot(plots_pool, ncols=3), title="By amplicon pool")
-    tab3 = Panel(
-        child=gridplot(plots_orient, ncols=3), title="By read orientation")
-    cover_panel = Tabs(tabs=[tab1, tab2, tab3])
-    section.plot(cover_panel)
+            # primer set plot
+            pset = df['primer_set']
+            xs = [df.loc[(pset == i) & bc]['pos'] for i in (1, 2)]
+            ys = [df.loc[(pset == i) & bc]['depth'] for i in (1, 2)]
+            names = ['pool-1', 'pool-2']
+            colors = [Colors.light_cornflower_blue, Colors.feldgrau]
+
+            p = lines.line(
+                xs, ys, colors=colors, names=names,
+                title="{}: {:.0f}X, {:.1f}% > {}X".format(
+                    sample, depth_mean, depth_thresh, depth_lim),
+                height=250, width=400,
+                x_axis_label='position', y_axis_label='depth')
+            for x, y, name, color in zip(xs, ys, names, colors):
+                p.varea(
+                    x=x, y1=0, y2=y, legend_label=name,
+                    fill_color=color, alpha=0.7,
+                    muted_color=color, muted_alpha=0.2)
+            p.legend.click_policy = 'mute'
+            plots_pool.append(p)
+
+        tab1 = Panel(
+            child=gridplot(plots_combined, ncols=3), title="Coverage Plot")
+        tab2 = Panel(
+            child=gridplot(plots_pool, ncols=3), title="By amplicon pool")
+        tab3 = Panel(
+            child=gridplot(plots_orient, ncols=3), title="By read orientation")
+        cover_panel = Tabs(tabs=[tab1, tab2, tab3])
+        section.plot(cover_panel)
 
     # canned VCF stats report component
     section = report_doc.add_section()
@@ -280,9 +283,14 @@ The table below reports the lineage of each sample as calculated by
 
 The table below lists whether candidate variants were determined to exist
 within each sample.
+
+The ARTIC workflow pre-filters (removes) candidate variants
+according to the criteria `variant_score < 20` and `coverage < 20`. The table
+draws attention to reference calls of low coverage (<20 reads) which may therefore be
+inaccurate.
 ''')
         df = read_files(args.genotypes, sep=',')
-        df = df[['sample', 'variant', 'variant_score', 'result']]
+        df = df[['sample', 'variant', 'variant_score', 'coverage', 'result', 'status']]
         section.table(df, index=False)
 
     # write report
