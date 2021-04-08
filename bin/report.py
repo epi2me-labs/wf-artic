@@ -61,9 +61,12 @@ def main():
     parser.add_argument(
         "--hide_coverage", action="store_true",
         help="Do not display coverage plots in report.")
+    parser.add_argument(
+        "--hide_variants", action="store_true",
+        help="Do not display variant summary in report.")
     args = parser.parse_args()
 
-    report_doc = report.HTMLReport(
+    report_doc = report.WFReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic")
     section = report_doc.add_section()
 
@@ -79,7 +82,7 @@ This section displays basic QC metrics indicating read data quality.
     median_length = np.median(seq_summary['sequence_length_template'])
     datas = [seq_summary['sequence_length_template']]
     length_hist = hist.histogram(
-        datas, colors=[Colors.cerulean], bins=100,
+        datas, colors=[Colors.cerulean], binwidth=50,
         title="Read length distribution.",
         x_axis_label='Read Length / bases',
         y_axis_label='Number of reads',
@@ -153,13 +156,13 @@ further indications of failed or inconclusive results.
     section.markdown("""
 ```{}```
 """.format(fail_list))
-    fail_percentage = 100 * len(failed) / len(status)
+    fail_percentage = int(100 * len(failed) / len(status))
     classes = ['Success', 'Analysis Failed']
     values = [100 - fail_percentage, fail_percentage]
     colors = ['#54B8B1', '#EF4135']
     plot = bars.single_hbar(
         values, classes, colors,
-        title="Failed analyses",
+        title="Completed analyses",
         x_axis_label="%age Samples")
     plot.x_range = Range1d(0, 140)
     section.plot(plot)
@@ -255,13 +258,19 @@ comparing depth across samples.***
         section.plot(cover_panel)
 
     # canned VCF stats report component
-    section = report_doc.add_section()
-    bcfstats.full_report(args.bcftools_stats, report=section)
+    if not args.hide_variants:
+        section = report_doc.add_section()
+        bcfstats.full_report(args.bcftools_stats, report=section)
 
     # NextClade analysis
     if args.nextclade is not None:
         section = report_doc.add_section(
             section=nextclade.NextClade(args.nextclade))
+        section.markdown(
+            "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
+            "may report 'Missing data' QC fails. This is expected and not "
+            "a concern provided the regions of interest are not reported "
+            "as missing.*")
 
     # Pangolin analysis
     if args.pangolin is not None:

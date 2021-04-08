@@ -148,12 +148,13 @@ process report {
     def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
+    def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
     """
     echo "$pangolin"
     echo "$nextclade"
     report.py \
         consensus_status.txt wf-artic-report.html \
-        $pangolin $nextclade $coverage \
+        $pangolin $nextclade $coverage $var_summary \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/* $genotype
@@ -302,7 +303,7 @@ workflow {
     }
 
     if (!valid_scheme_versions.any { it == params.scheme_version}) {
-        println("`--scheme_version should be one of: $valid_scheme_versions")
+        println("`--scheme_version` should be one of: $valid_scheme_versions, for `--scheme_name`: $params.scheme_name")
         exit 1
     }
 
