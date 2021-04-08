@@ -76,7 +76,6 @@ def create_genotype_summary(vcf_file, bam_file, variants_file, valid_coverage):
 
 def main():
     """Create the genotype summary output the result to file."""
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument(

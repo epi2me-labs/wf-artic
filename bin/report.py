@@ -74,7 +74,6 @@ def main():
 ### Read Quality control
 This section displays basic QC metrics indicating read data quality.
 ''')
-
     # read length summary
     seq_summary = read_files(args.summaries)
     total_bases = seq_summary['sequence_length_template'].sum()
@@ -141,11 +140,10 @@ This section displays basic QC metrics indicating read data quality.
 
     section = report_doc.add_section()
     section.markdown("""
-### Artic Analysis status
-The panel below lists samples which failed to produce valid results from the
-primary ARTIC analysis. Samples not listed here were analysed successfully,
-but may still contain inconclusive results. See the following sections for
-further indications of failed or inconclusive results.
+### Artic Analysis status The panel below lists samples which failed to produce
+results from the primary ARTIC analysis. Samples not listed here were analysed
+successfully, but may still contain inconclusive or invalid results. See the
+following sections for further indications of failed or inconclusive results.
 """)
     status = pd.read_csv(args.status, sep='\t')
     failed = status.loc[status['pass'] == 0]
@@ -293,13 +291,14 @@ The table below reports the lineage of each sample as calculated by
 The table below lists whether candidate variants were determined to exist
 within each sample.
 
-The ARTIC workflow pre-filters (removes) candidate variants
-according to the criteria `variant_score < 20` and `coverage < 20`. The table
-draws attention to reference calls of low coverage (<20 reads) which may therefore be
-inaccurate.
+The ARTIC workflow pre-filters (removes) candidate variants according to the
+criteria `variant_score < 20` and `coverage < 20`. The table draws attention to
+reference calls of low coverage (<20 reads) which may therefore be inaccurate.
 ''')
         df = read_files(args.genotypes, sep=',')
-        df = df[['sample', 'variant', 'variant_score', 'coverage', 'result', 'status']]
+        df = df[[
+            'sample', 'variant', 'variant_score',
+            'coverage', 'result', 'status']]
         section.table(df, index=False)
 
     # write report
