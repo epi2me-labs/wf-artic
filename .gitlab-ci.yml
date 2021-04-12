@@ -15,3 +15,13 @@ release-pangolin:
         - LATEST="${DOCKERHUB_NAMESPACE}/pangolin:latest"
         - docker build --no-cache -t "${LATEST}" -f Dockerfile . --build-arg ENVFILE=environment_pangolin.yaml
         - docker push ${LATEST}
+        # push to aws
+        - AWSPREFIX=${AWS_CONTAINER_REGISTRY}/${AWS_IMAGE_PREFIX}
+        - AWSTAG="${AWSPREFIX}-pangolin:latest"
+        - docker tag "${LATEST}" "${AWSTAG}"
+        # create registry, login, and push
+        - aws ecr create-repository --repository-name "${AWS_IMAGE_PREFIX}-${CI_PROJECT_NAME}" || echo "Couldn't create registry, assume it exists"
+        - aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${AWS_CONTAINER_REGISTRY}
+        - docker push ${AWSTAG}
+
+
