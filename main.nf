@@ -56,23 +56,7 @@ process checkSampleSheet {
     output:
         file "samples.txt"
     """
-#!/usr/bin/env python
-import pandas as pd
-try:
-    samples = pd.read_csv("sample_sheet.txt", sep=None)
-    if 'barcode' not in samples.columns or 'sample_name' not in samples.columns:
-        raise IOError()
-except Exception:
-    raise IOError(
-        "Could not parse sample sheet, it must contain two columns "
-        "named 'barcode' and 'sample_name'.")
-# check duplicates
-dup_bc = samples['barcode'].duplicated()
-dup_sample = samples['sample_name'].duplicated()
-if any(dup_bc) or any(dup_sample):
-    raise IOError(
-        "Sample sheet contains duplicate values.")
-samples.to_csv("samples.txt", sep=",", index=False)
+    check_sample_sheet.py sample_sheet.txt samples.txt
     """
 }
 
