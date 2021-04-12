@@ -11,6 +11,7 @@ release-pangolin:
     stage: custom-builds
     when: manual
     script:
+        - *install-awscli
         - echo ${DOCKERHUB_TOKEN} | docker login --username epi2melabs --password-stdin
         - LATEST="${DOCKERHUB_NAMESPACE}/pangolin:latest"
         - docker build --no-cache -t "${LATEST}" -f Dockerfile . --build-arg ENVFILE=environment_pangolin.yaml
