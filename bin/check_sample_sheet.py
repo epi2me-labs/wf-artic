@@ -4,6 +4,7 @@ import argparse
 
 import pandas as pd
 
+
 def main():
     """Run entry point."""
     parser = argparse.ArgumentParser()
@@ -13,7 +14,8 @@ def main():
 
     try:
         samples = pd.read_csv(args.sample_sheet, sep=None)
-        if 'barcode' not in samples.columns or 'sample_name' not in samples.columns:
+        if 'barcode' not in samples.columns \
+                or 'sample_name' not in samples.columns:
             raise IOError()
     except Exception:
         raise IOError(
@@ -26,6 +28,7 @@ def main():
         raise IOError(
             "Sample sheet contains duplicate values.")
     samples.to_csv(args.output, sep=",", index=False)
+
 
 if __name__ == '__main__':
     main()
