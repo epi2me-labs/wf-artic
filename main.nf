@@ -128,6 +128,7 @@ process report {
     output:
         file "wf-artic-report.html"
     script:
+    // when genotype_variants is false the channel contains a mock file
     def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
     def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
@@ -252,7 +253,7 @@ workflow pipeline {
             genotype_summary = genotypeSummary(
                 runArtic.out[1], runArtic.out[4], runArtic.out[5], ref_variants).collect()
         } else {
-            genotype_summary = Channel.fromPath('NO_FILE')
+            genotype_summary = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
         }
         // nextclade
         clades = nextclade(all_consensus[0], reference, primers)
