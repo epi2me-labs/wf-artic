@@ -9,7 +9,6 @@ medaka_model=$5
 full_scheme_name=$6
 threads=$7
 
-
 function mock_artic {
     # write an empty VCF
     echo "Mocking artic results"
@@ -44,8 +43,10 @@ artic minion --medaka --normalise 200 --threads ${threads} \
     ${full_scheme_name} ${sample_name} \
     || mock_artic
 
-zcat "${sample_name}.pass.vcf.gz" | sed "s/SAMPLE/${sample_name}/" | bgzip > "${sample_name}.pass.named.vcf.gz"
-bcftools index -t "${sample_name}.pass.named.vcf.gz"
+for vcf_set in "pass" "merged.gvcf"; do
+    zcat "${sample_name}.${vcf_set}.vcf.gz" | sed "s/SAMPLE/${sample_name}/" | bgzip > "${sample_name}.${vcf_set}.named.vcf.gz"
+    bcftools index -t "${sample_name}.${vcf_set}.named.vcf.gz"
+done;
 
 # rename the consensus sequence
 sed -i "s/^>\S*/>${sample_name}/" "${sample_name}.consensus.fasta"

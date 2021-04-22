@@ -33,7 +33,12 @@ Options:
     --genotype_variants   FILE    A VCF containing known variants to genotype.
     --report_clade        BOOL    Show results of Nextclade analysis in report.
     --report_lineage      BOOL    Show results of Pangolin analysis in report.
-    --report_coverage     BOOL    Show genome coverage traces in report. 
+    --report_coverage     BOOL    Show genome coverage traces in report.
+
+Metadata:
+    --timestamp           STR     Timestamp for the genotyping report
+    --lab_id              STR     Lab_id for genotyping report
+    --testkit             STR     Testkit for genotyping report
 
 Notes:
     If directories named "barcode*" are found under the `--fastq` directory the
@@ -60,6 +65,7 @@ process checkSampleSheet {
     """
 }
 
+
 process preArticQC {
     label "artic"
     cpus 1
@@ -80,12 +86,12 @@ process runArtic {
         tuple file(directory), val(sample_name)
         file "primer_schemes"
     output:
-        file "${sample_name}.consensus.fasta"
-        tuple file("${sample_name}.pass.named.vcf.gz"), file("${sample_name}.pass.named.vcf.gz.tbi")
-        file "${sample_name}.depth.txt"
-        file "${sample_name}.pass.named.stats"
-        file "${sample_name}.sorted.bam"
-        file "${sample_name}.sorted.bam.bai"
+        path "${sample_name}.consensus.fasta", emit: consensus
+        tuple path("${sample_name}.pass.named.vcf.gz"), path("${sample_name}.pass.named.vcf.gz.tbi"), emit: pass_vcf
+        tuple path("${sample_name}.merged.gvcf.named.vcf.gz"), path("${sample_name}.merged.gvcf.named.vcf.gz.tbi"), emit: merged_gvcf
+        path "${sample_name}.depth.txt", emit: depth_stats
+        path "${sample_name}.pass.named.stats", emit: vcf_stats
+        tuple path("${sample_name}.sorted.bam"), path("${sample_name}.sorted.bam.bai"), emit: bam
     """
     run_artic.sh \
         ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
@@ -102,14 +108,29 @@ process genotypeSummary {
     cpus 1
     input:
         tuple file(vcf), file(tbi)
-        file bam
-        file bam_index
+        tuple file(bam), file(bam_index)
         file "reference.vcf"
     output:
         file "*genotype.csv"
     script:
+        def lab_id = params.lab_id ? "--lab_id ${params.lab_id}" : ""
+        def testKit = params.testKit ? "--testKit ${params.testKit}" : ""
+        def csvName = vcf.simpleName
     """
-    genotype_summary.py -b $bam -v $vcf -d reference.vcf -o ${vcf}.genotype.csv
+    genotype_summary.py -b $bam -v filteredQ20_${vcf} -d reference.vcf --sample $csvName $lab_id $testKit -o ${csvName}.genotype.csv
+    """
+}
+
+
+process combineGenotypeSummaries {
+    label "artic"
+    cpus 1
+    input:
+        file "*.csv"
+    output:
+        file "genotype_summary.csv"
+    """
+    combine_genotype_summaries.py -g *.csv -o genotype_summary.csv
     """
 }
 
@@ -202,7 +223,6 @@ process nextclade {
 
 
 process pangolin {
-
     label "pangolin"
     cpus 1
     input:
@@ -241,17 +261,19 @@ workflow pipeline {
         reference
         primers
     main:
+        combined_genotype_summary = null
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
         // collate consensus and variants
         all_consensus = allConsensus(runArtic.out[0].collect())
-        tmp = runArtic.out[1].toList().transpose().toList() // surely theres another way?
+        tmp = runArtic.out.pass_vcf.toList().transpose().toList() // surely theres another way?
         all_variants = allVariants(tmp)
         // genotype summary
         if (params.genotype_variants) {
             ref_variants = file(params.genotype_variants)
             genotype_summary = genotypeSummary(
-                runArtic.out[1], runArtic.out[4], runArtic.out[5], ref_variants).collect()
+                runArtic.out.merged_gvcf, runArtic.out.bam, ref_variants).collect()
+            combined_genotype_summary = combineGenotypeSummaries(genotype_summary)
         } else {
             genotype_summary = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
         }
@@ -261,14 +283,15 @@ workflow pipeline {
         lineages = pangolin(all_consensus[0])
         // report
         html_doc = report(
-            runArtic.out[2].collect(),
+            runArtic.out.depth_stats.collect(),
             read_summaries.collect(), 
             clades.collect(),
             lineages.collect(),
             genotype_summary.collect(),
-            runArtic.out[3].collect(),
+            runArtic.out.vcf_stats.collect(),
             all_consensus[1])
-        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), html_doc)
+        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), 
+            combined_genotype_summary, html_doc)
     emit:
         results
 }

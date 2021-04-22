@@ -121,7 +121,7 @@ This section displays basic QC metrics indicating read data quality.
         .reset_index()
         .rename(
             columns={'index': 'sample', 'sample_name': 'count'})
-        )
+    )
 
     bc_counts = bars.simple_bar(
         barcode_counts['sample'].astype(str), barcode_counts['count'],
@@ -199,7 +199,7 @@ comparing depth across samples.***
                     sample, depth_mean, depth_thresh, depth_lim),
                 height=250, width=400,
                 x_axis_label='position', y_axis_label='depth',
-                )
+            )
             p.varea(
                 x=depth['pos'], y1=0.1, y2=depth['depth'],
                 fill_color=Colors.cerulean)
@@ -297,8 +297,8 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
 ''')
         df = read_files(args.genotypes, sep=',')
         df = df[[
-            'sample', 'variant', 'variant_score',
-            'coverage', 'result', 'status']]
+            'Sample', 'Result', 'Date Tested', 'Lab ID', 'testKit',
+            'CH1-Target', 'CH1-Result', 'CH1-Conf']]
         section.table(df, index=False)
 
     # write report
