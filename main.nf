@@ -117,7 +117,7 @@ process genotypeSummary {
         def testKit = params.testKit ? "--testKit ${params.testKit}" : ""
         def csvName = vcf.simpleName
     """
-    genotype_summary.py -b $bam -v filteredQ20_${vcf} -d reference.vcf --sample $csvName $lab_id $testKit -o ${csvName}.genotype.csv
+    genotype_summary.py -b $bam -v $vcf -d reference.vcf --sample $csvName $lab_id $testKit -o ${csvName}.genotype.csv
     """
 }
 
