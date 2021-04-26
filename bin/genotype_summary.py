@@ -168,7 +168,8 @@ def compile_table(results, sample, lab_id, timestamp, testkit,
         })
 
     table_df = pd.DataFrame(table_data)
-    table_df = table_df.sort_values(by=['Sample', 'CH1-Target'], ascending=False)
+    table_df = table_df.sort_values(
+        by=['Sample', 'CH1-Target'], ascending=False)
     return table_df
 
 
@@ -207,7 +208,8 @@ def main():
         help="Override the default lab_id (ONT)", default="ONT")
     parser.add_argument(
         "--testkit", required=False, type=str,
-        help="Override the default testKit (ONT_spikeseq", default="ONT_spikeseq")
+        help="Override default testKit (ONT_spikeseq)",
+        default="ONT_spikeseq")
 
     args = parser.parse_args()
 
