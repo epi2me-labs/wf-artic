@@ -1,4 +1,4 @@
-#!/usr/bin/env extflow
+#!/usr/bin/env nextflow
 
 nextflow.enable.dsl = 2
 
@@ -67,6 +67,7 @@ process checkSampleSheet {
 
 
 process copySchemeDir {
+    label "artic"
     cpus 1
     input:
         path scheme_directory
