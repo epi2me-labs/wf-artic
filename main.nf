@@ -66,6 +66,18 @@ process checkSampleSheet {
 }
 
 
+process copySchemeDir {
+    cpus 1
+    input:
+        path scheme_directory
+    output:
+        path "scheme_dir"
+    """
+    cp -RL $scheme_directory scheme_dir
+    """
+}
+
+
 process preArticQC {
     label "artic"
     cpus 1
@@ -114,10 +126,10 @@ process genotypeSummary {
         file "*genotype.csv"
     script:
         def lab_id = params.lab_id ? "--lab_id ${params.lab_id}" : ""
-        def testKit = params.testKit ? "--testKit ${params.testKit}" : ""
+        def testkit = params.testkit ? "--testkit ${params.testkit}" : ""
         def csvName = vcf.simpleName
     """
-    genotype_summary.py -b $bam -v $vcf -d reference.vcf --sample $csvName $lab_id $testKit -o ${csvName}.genotype.csv
+    genotype_summary.py -b $bam -v $vcf -d reference.vcf --sample $csvName $lab_id $testkit -o ${csvName}.genotype.csv
     """
 }
 
@@ -214,7 +226,8 @@ process nextclade {
     output:
         file "nextclade.json"
     """
-    scheme_to_nextclade.py $scheme_bed reference.fasta primers.csv
+    cp -L reference.fasta ref.fasta
+    scheme_to_nextclade.py $scheme_bed ref.fasta primers.csv
     nextclade \
         --input-fasta consensus.fasta --input-pcr-primers primers.csv \
         --output-json nextclade.json
@@ -262,6 +275,7 @@ workflow pipeline {
         primers
     main:
         combined_genotype_summary = null
+        scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
         // collate consensus and variants
@@ -291,7 +305,7 @@ workflow pipeline {
             runArtic.out.vcf_stats.collect(),
             all_consensus[1])
         results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), 
-            combined_genotype_summary, html_doc)
+            html_doc, combined_genotype_summary)
     emit:
         results
 }

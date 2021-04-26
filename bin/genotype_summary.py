@@ -167,7 +167,9 @@ def compile_table(results, sample, lab_id, timestamp, testkit,
             'CH1-Conf': CH1_conf
         })
 
-    return pd.DataFrame(table_data)
+    table_df = pd.DataFrame(table_data)
+    table_df = table_df.sort_values(by=['Sample', 'CH1-Target'], ascending=False)
+    return table_df
 
 
 def main():
@@ -198,14 +200,14 @@ def main():
         help="Override the default sample name")
     parser.add_argument(
         "--timestamp", required=False, type=str,
-        help="Override the automatic timestamp",
+        help="Override the automatically generated timestamp",
         default=timestamp)
     parser.add_argument(
         "--lab_id", required=False, type=str,
-        help="Override the default lab_id", default="ONT")
+        help="Override the default lab_id (ONT)", default="ONT")
     parser.add_argument(
         "--testkit", required=False, type=str,
-        help="Override the default testKit", default="ONT_spikeseq")
+        help="Override the default testKit (ONT_spikeseq", default="ONT_spikeseq")
 
     args = parser.parse_args()
 
