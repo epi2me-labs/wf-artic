@@ -299,6 +299,7 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
         df = df[[
             'Sample', 'Result', 'Date Tested', 'Lab ID', 'testKit',
             'CH1-Target', 'CH1-Result', 'CH1-Conf']]
+        df = df.sort_values(by=['Sample', 'CH1-Target'], ascending=True)
         section.table(df, index=False)
 
     # write report

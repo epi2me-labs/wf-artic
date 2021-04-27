@@ -30,6 +30,10 @@ def main():
         'Sample', 'Result', 'Date Tested', 'Lab ID', 'testKit',
         'CH1-Target', 'CH1-Result', 'CH1-Conf'
     ]]
+    df = df.sort_values(
+        by=['Sample', 'CH1-Target'],
+        ascending=True
+    )
 
     df.to_csv(args.output, index=False, na_rep='n/a')
 
