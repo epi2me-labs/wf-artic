@@ -64,10 +64,17 @@ def main():
     parser.add_argument(
         "--hide_variants", action="store_true",
         help="Do not display variant summary in report.")
+    parser.add_argument(
+        "--revision", default='unknown',
+        help="git branch/tag of the executed workflow")
+    parser.add_argument(
+        "--commit", default='unknown',
+        help="git commit of the executed workflow")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
-        "SARS-CoV-2 ARTIC Sequencing report", "wf-artic")
+        "SARS-CoV-2 ARTIC Sequencing report", "wf-artic",
+        revision=args.revision, commit=args.commit)
     section = report_doc.add_section()
 
     section.markdown('''

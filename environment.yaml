@@ -5,7 +5,7 @@ channels:
     - conda-forge
     - defaults
 dependencies:
-    - aplanat >=0.3.10
-    - nextclade-cli >=0.13.0
-    - np-artic >=1.3.0=py_3
-    - pomoxis >=0.3.6
+    - aplanat =0.3.12
+    - nextclade-cli =0.13.0
+    - np-artic =1.3.0=py_5
+    - pomoxis =0.3.6

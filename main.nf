@@ -174,6 +174,7 @@ process report {
     report.py \
         consensus_status.txt wf-artic-report.html \
         $pangolin $nextclade $coverage $var_summary \
+        --revision $workflow.revision --commit $workflow.commitId \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/* $genotype
