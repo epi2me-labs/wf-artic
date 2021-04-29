@@ -8,10 +8,10 @@ from aplanat.components import bcfstats, nextclade
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
+import conda_versions
 import numpy as np
 import pandas as pd
 
-import conda_versions
 
 def read_files(summaries, sep='\t'):
     """Read a set of files and join to single dataframe."""
@@ -321,8 +321,6 @@ The table below highlights versions of key software used within the analysis.
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)
-
-
 
     # write report
     report_doc.write(args.output)

@@ -1,14 +1,21 @@
-from collections import namedtuple
+"""Scrape versions of conda packages."""
+
 import subprocess
+from collections import namedtuple
+
 
 try:
     import pandas as pd
 except ImportError:
     pass
 
-PackageInfo = namedtuple('PackageInfo', ('Name', 'Version', 'Build', 'Channel'))
+
+PackageInfo = namedtuple(
+    'PackageInfo', ('Name', 'Version', 'Build', 'Channel'))
+
 
 def scrape_data(as_dataframe=False, include=None):
+    """Return versions of conda packages in base environment."""
     cmd = """
 . ~/conda/etc/profile.d/mamba.sh;
 micromamba activate;
@@ -28,5 +35,3 @@ micromamba list;
             list(versions.values()),
             columns=PackageInfo._fields)
     return versions
-
-
