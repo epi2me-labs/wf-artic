@@ -1,7 +1,7 @@
 """Scrape versions of conda packages."""
 
-import subprocess
 from collections import namedtuple
+import subprocess
 
 
 try:
