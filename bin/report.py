@@ -11,6 +11,7 @@ from bokeh.models import Panel, Range1d, Tabs
 import numpy as np
 import pandas as pd
 
+import conda_versions
 
 def read_files(summaries, sep='\t'):
     """Read a set of files and join to single dataframe."""
@@ -75,8 +76,8 @@ def main():
     report_doc = report.WFReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic",
         revision=args.revision, commit=args.commit)
-    section = report_doc.add_section()
 
+    section = report_doc.add_section()
     section.markdown('''
 ### Read Quality control
 This section displays basic QC metrics indicating read data quality.
@@ -308,6 +309,20 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
             'CH1-Target', 'CH1-Result', 'CH1-Conf']]
         df = df.sort_values(by=['Sample', 'CH1-Target'], ascending=True)
         section.table(df, index=False)
+
+    section = report_doc.add_section()
+    section.markdown('''
+### Software versions
+The table below highlights versions of key software used within the analysis.
+''')
+    req = [
+        'np-artic', 'medaka', 'minimap2', 'bcftools', 'nextclade-cli',
+        'samtools', 'bcftools']
+    versions = conda_versions.scrape_data(
+        as_dataframe=True, include=req)
+    section.table(versions[['Name', 'Version', 'Build']], index=False)
+
+
 
     # write report
     report_doc.write(args.output)
