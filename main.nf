@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+import java.util.zip.GZIPInputStream;
 
 nextflow.enable.dsl = 2
 
@@ -31,6 +32,8 @@ Options:
                                   (e.g. 89% genome covered at > `report_depth`)
                                   indicating correspondence between
     --genotype_variants   FILE    A VCF containing known variants to genotype.
+    --detect_samples      BOOL    Automatically determine sample_id information from fastq
+                                  header, replaces the --samples csv.
     --report_clade        BOOL    Show results of Nextclade analysis in report.
     --report_lineage      BOOL    Show results of Pangolin analysis in report.
     --report_coverage     BOOL    Show genome coverage traces in report.
@@ -50,6 +53,29 @@ Notes:
     Minimum and maximum rad length filters are applied based on the amplicon scheme.
     These can be overridden using the `--min_len` and `--max_len` options.
 """
+}
+
+
+def sampleFromHeader(fastq) {
+    InputStream stream
+    if (fastq.endsWith("gz")) {
+        stream = new GZIPInputStream(
+            new FileInputStream(fastq.toString()));
+    } else {
+        stream = new FileInputStream(fastq.toString());
+    }
+
+    Reader reader = new InputStreamReader(stream, "UTF-8");
+    def line = reader.readLine()
+    def found = line.findAll("sample_id=[A-Za-z0-9]+")
+    reader.close()
+
+    if (found) {
+       return found[0].split('=')[1]
+    }
+
+    println("--detect_samples is on but no sample_id was found in fastq header")
+    exit 1
 }
 
 
@@ -337,6 +363,11 @@ workflow {
         exit 1
     }
 
+    if (params.samples && params.detect_samples) {
+        println("Select either `--samples` or `--detect_samples`, not both")
+        exit 1
+    }
+
     if (!params.min_len) {
         params.remove('min_len')
         if (params.scheme_version == "V1200") {
@@ -374,6 +405,7 @@ workflow {
     primers = file(
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
         type:'file', checkIfExists:true)
+    
     // check sample sheet
     sample_sheet = null
     if (params.samples) {
@@ -385,6 +417,7 @@ workflow {
 
     // resolve whether we have demultiplexed data or single sample
     not_barcoded = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
+
     // remove empty barcode_dirs
     barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
     valid_barcode_dirs = []
@@ -396,6 +429,7 @@ workflow {
             valid_barcode_dirs << d
         }
     }
+
     if (barcode_dirs) {
         println("Found barcode directories")
         if (invalid_barcode_dirs.size() > 0) {
@@ -405,11 +439,24 @@ workflow {
             }
         }
         if (!sample_sheet) {
-            // just map directory name to self
-            sample_sheet = Channel
-                .fromPath(valid_barcode_dirs)
-                .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
-                .map { path -> tuple(path.baseName, path.baseName) }
+            // check if we need to autodetect sample names
+            if (params.detect_samples) {
+                sample_sheet = Channel
+                    .fromPath(valid_barcode_dirs)
+                    .map { path -> tuple(
+                        path.baseName, 
+                        file("${path}{**,.}/*.{fastq,fastq.gz,fq,fq.gz}")) }
+                    .filter { pathTuple -> !pathTuple[1].isEmpty() }
+                    .map { pathTuple -> tuple(
+                        pathTuple[0],
+                        sampleFromHeader(pathTuple[1][0])) }
+            } else {
+                // just map directory name to self
+                sample_sheet = Channel
+                    .fromPath(valid_barcode_dirs)
+                    .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
+                    .map { path -> tuple(path.baseName, path.baseName) }
+            }
         }
         Channel
             .fromPath(valid_barcode_dirs)
