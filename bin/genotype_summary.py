@@ -64,6 +64,8 @@ def extract_calls(df, chrom, pos, ref):
     if df_calls.empty:
         return []
 
+    df_calls[QUAL] = pd.to_numeric(df_calls[QUAL])
+
     calls_list = []
     for call in df_calls.to_dict('records'):
         calls_list.append({
