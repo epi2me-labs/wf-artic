@@ -31,7 +31,7 @@ Options:
     --report_depth        INT     Min. depth for percentage coverage (default: $params.report_depth)
                                   (e.g. 89% genome covered at > `report_depth`)
                                   indicating correspondence between
-    --genotype_variants   FILE    A VCF containing known variants to genotype.
+    --genotype_variants   BOOL    Report genotyping information for scheme's known variants of interest.
     --detect_samples      BOOL    Automatically determine sample_id information from fastq
                                   header, replaces the --samples csv.
     --report_clade        BOOL    Show results of Nextclade analysis in report.
@@ -301,6 +301,7 @@ workflow pipeline {
         scheme_directory
         reference
         primers
+        ref_variants
     main:
         combined_genotype_summary = null
         scheme_directory = copySchemeDir(scheme_directory)
@@ -312,7 +313,6 @@ workflow pipeline {
         all_variants = allVariants(tmp)
         // genotype summary
         if (params.genotype_variants) {
-            ref_variants = file(params.genotype_variants)
             genotype_summary = genotypeSummary(
                 runArtic.out.merged_gvcf, runArtic.out.bam, ref_variants).collect()
             combined_genotype_summary = combineGenotypeSummaries(genotype_summary)
@@ -406,6 +406,15 @@ workflow {
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
         type:'file', checkIfExists:true)
     
+    // check genotype variants
+    if (params.genotype_variants) {
+        ref_variants = file(
+            "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.vcf",
+            type:'file', checkIfExists:true)
+    } else {
+        ref_variants = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
+    }
+
     // check sample sheet
     sample_sheet = null
     if (params.samples) {
@@ -473,6 +482,6 @@ workflow {
             .map { path -> tuple(path, sample) }
             .set{ samples }
     }
-    results = pipeline(samples, scheme_directory, reference, primers)
+    results = pipeline(samples, scheme_directory, reference, primers, ref_variants)
     output(results)
 }
