@@ -31,7 +31,8 @@ Options:
     --report_depth        INT     Min. depth for percentage coverage (default: $params.report_depth)
                                   (e.g. 89% genome covered at > `report_depth`)
                                   indicating correspondence between
-    --genotype_variants   BOOL    Report genotyping information for scheme's known variants of interest.
+    --genotype_variants   FILE    Report genotyping information for scheme's known variants of interest,
+                                  optionally provide file path as argument.
     --detect_samples      BOOL    Automatically determine sample_id information from fastq
                                   header, replaces the --samples csv.
     --report_clade        BOOL    Show results of Nextclade analysis in report.
@@ -414,9 +415,13 @@ workflow {
     
     // check genotype variants
     if (params.genotype_variants) {
-        ref_variants = file(
-            "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.vcf",
-            type:'file', checkIfExists:true)
+        if (params.genotype_variants == true) {
+            ref_variants = file(
+                "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.vcf",
+                type:'file', checkIfExists:true)
+        } else {
+            ref_variants = file(params.genotype_variants, type:'file', checkIfExists:true)
+        }
     } else {
         ref_variants = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
     }
