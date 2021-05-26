@@ -230,14 +230,20 @@ process allVariants {
     cpus 1
     input:
         tuple file(vcfs), file(tbis)
+        file reference
     output:
         tuple file("all_variants.vcf.gz"), file("all_variants.vcf.gz.tbi")
     """
-    if [[ \$(ls *.vcf.gz | wc -l) == "1" ]]; then
-        mv *.vcf.gz all_variants.vcf.gz
-        mv *.vcf.gz.tbi all_variants.vcf.gz.tbi
+    for vcf in \$(ls *.vcf.gz)
+    do
+        bcftools norm -c s -O z --fasta-ref $reference \$vcf > norm.\$vcf
+        bcftools index -t norm.\$vcf
+    done
+    if [[ \$(ls norm.*.vcf.gz | wc -l) == "1" ]]; then
+        mv norm.*.vcf.gz all_variants.vcf.gz
+        mv norm.*.vcf.gz.tbi all_variants.vcf.gz.tbi
     else 
-        bcftools merge -o all_variants.vcf.gz -O z *.vcf.gz
+        bcftools merge -o all_variants.vcf.gz -O z norm.*.vcf.gz
         bcftools index -t all_variants.vcf.gz
     fi
     """
@@ -310,7 +316,7 @@ workflow pipeline {
         // collate consensus and variants
         all_consensus = allConsensus(runArtic.out[0].collect())
         tmp = runArtic.out.pass_vcf.toList().transpose().toList() // surely theres another way?
-        all_variants = allVariants(tmp)
+        all_variants = allVariants(tmp, reference)
         // genotype summary
         if (params.genotype_variants) {
             genotype_summary = genotypeSummary(

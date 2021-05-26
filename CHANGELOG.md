@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.2 Unreleased]
 ### Changed
 - genotype_summary option is now a flag, rather than a vcf path
+### Fixed
+- updated allVariants step to normalise REF fields to fix vcf merge issue
 
 ## [v0.2.1]
 ### Fixed
