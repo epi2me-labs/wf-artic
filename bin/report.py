@@ -13,6 +13,32 @@ import numpy as np
 import pandas as pd
 
 
+def load_params(path):
+    """Load the parameters csv into a dataframe."""
+    params_cols = ['Name', 'Value']
+    df_params = pd.read_csv(path, names=params_cols)
+
+    for _, row in df_params.iterrows():
+        name = row['Name']
+        value = row['Value']
+
+        if not name.startswith('_'):
+            continue
+
+        initial = name.lstrip('_')
+        matches = df_params.loc[df_params['Name'] == initial]
+        if matches.empty:
+            df_new = pd.DataFrame([[initial, value]], columns=params_cols)
+            df_params = df_params.append(df_new, ignore_index=True)
+        else:
+            matches['Value'] = value
+
+        df_params = df_params[df_params['Name'] != name]
+
+    df_params.fillna('N/A', inplace=True)
+    return df_params
+
+
 def read_files(summaries, sep='\t'):
     """Read a set of files and join to single dataframe."""
     dfs = list()
@@ -71,6 +97,9 @@ def main():
     parser.add_argument(
         "--commit", default='unknown',
         help="git commit of the executed workflow")
+    parser.add_argument(
+        "--params", default=None,
+        help="A csv containing the parameter key/values")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
@@ -321,6 +350,15 @@ The table below highlights versions of key software used within the analysis.
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)
+
+    # Params reporting
+    section = report_doc.add_section()
+    section.markdown('''
+### Workflow parameters
+The table below highlights values of the main parameters used in this analysis.
+''')
+    df_params = load_params(args.params)
+    section.table(df_params, index=False)
 
     # write report
     report_doc.write(args.output)

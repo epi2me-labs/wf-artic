@@ -7,7 +7,7 @@ valid_schemes = ["SARS-CoV-2", "spike-seq"]
 valid_scheme_versions = ["V1", "V2", "V3", "V1200"]
 
 if (params.scheme_name == "spike-seq") {
-    valid_scheme_versions = ["V1", "V2", "V3", "V4"]
+    valid_scheme_versions = ["V1"]
 }
 
 def helpMessage(){
@@ -18,31 +18,32 @@ Usage:
     nextflow run main.nf [options]
 
 Options:
-    --fastq               DIR     Path to FASTQ directory (required)
-    --samples             FILE    CSV file with columns named `barcode` and `sample_name`
-                                  (or simply a sample name for non-multiplexed data).
-    --out_dir             DIR     Path for output (default: $params.out_dir)
-    --medaka_model        STR     Medaka model name (default: $params.medaka_model)
-    --min_len             INT     Minimum read length (default: set by scheme)
-    --max_len             INT     Maximum read length (default: set by scheme)
-    --scheme_name         STR     Scheme to use ($valid_schemes) (default: SARS-CoV-2)
-    --scheme_version      STR     Primer scheme version ($valid_scheme_versions)
-                                  (default: $params.scheme_version)
-    --report_depth        INT     Min. depth for percentage coverage (default: $params.report_depth)
-                                  (e.g. 89% genome covered at > `report_depth`)
-                                  indicating correspondence between
-    --genotype_variants   FILE    Report genotyping information for scheme's known variants of interest,
-                                  optionally provide file path as argument.
-    --detect_samples      BOOL    Automatically determine sample_id information from fastq
-                                  header, replaces the --samples csv.
-    --report_clade        BOOL    Show results of Nextclade analysis in report.
-    --report_lineage      BOOL    Show results of Pangolin analysis in report.
-    --report_coverage     BOOL    Show genome coverage traces in report.
+    --fastq                     DIR     Path to FASTQ directory (required)
+    --samples                   FILE    CSV file with columns named `barcode` and `sample_name`
+                                        (or simply a sample name for non-multiplexed data).
+    --out_dir                   DIR     Path for output (default: $params.out_dir)
+    --medaka_model              STR     Medaka model name (default: $params.medaka_model)
+    --min_len                   INT     Minimum read length (default: set by scheme)
+    --max_len                   INT     Maximum read length (default: set by scheme)
+    --scheme_name               STR     Scheme to use ($valid_schemes) (default: SARS-CoV-2)
+    --scheme_version            STR     Primer scheme version ($valid_scheme_versions)
+                                        (default: $params.scheme_version)
+    --report_depth              INT     Min. depth for percentage coverage (default: $params.report_depth)
+                                        (e.g. 89% genome covered at > `report_depth`)
+                                        indicating correspondence between
+    --genotype_variants         FILE    Report genotyping information for scheme's known variants of interest,
+                                        optionally provide file path as argument.
+    --detect_samples            BOOL    Automatically determine sample_id information from fastq
+                                        header, replaces the --samples csv.
+    --report_clade              BOOL    Show results of Nextclade analysis in report.
+    --report_lineage            BOOL    Show results of Pangolin analysis in report.
+    --report_coverage           BOOL    Show genome coverage traces in report.
+    --report_variant_summary    BOOL    Show / hide variant information in report. (default: true)
 
 Metadata:
-    --timestamp           STR     Timestamp for the genotyping report
-    --lab_id              STR     Lab_id for genotyping report
-    --testkit             STR     Testkit for genotyping report
+    --timestamp                 STR     Timestamp for the genotyping report
+    --lab_id                    STR     Lab_id for genotyping report
+    --testkit                   STR     Testkit for genotyping report
 
 Notes:
     If directories named "barcode*" are found under the `--fastq` directory the
@@ -195,13 +196,19 @@ process report {
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
+    def paramsMap = params.toMapString()
+        .replace("[", "")
+        .replace("]", "")
+        .replace(", ", "\n")
+        .replace(":", ",");
     """
     echo "$pangolin"
     echo "$nextclade"
+    echo "$paramsMap" > params.csv
     report.py \
         consensus_status.txt wf-artic-report.html \
         $pangolin $nextclade $coverage $var_summary \
-        --revision $workflow.revision --commit $workflow.commitId \
+        --revision $workflow.revision --params params.csv --commit $workflow.commitId \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/* $genotype
@@ -265,7 +272,7 @@ process nextclade {
     scheme_to_nextclade.py $scheme_bed ref.fasta primers.csv
     nextclade \
         --input-fasta consensus.fasta --input-pcr-primers primers.csv \
-        --output-json nextclade.json
+        --output-json nextclade.json --jobs 1
     """
 }
 
