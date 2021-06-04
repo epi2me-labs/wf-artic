@@ -167,7 +167,7 @@ process combineGenotypeSummaries {
     label "artic"
     cpus 1
     input:
-        file "*.csv"
+        file "summary_*.csv"
     output:
         file "genotype_summary.csv"
     """
