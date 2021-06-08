@@ -75,6 +75,9 @@ def main():
         "--genotypes", nargs='+', required=False,
         help="Genotyping summary files")
     parser.add_argument(
+        "--min_cover", default=20, type=int,
+        help="Minimum locus coverage for variant call.")
+    parser.add_argument(
         "--min_len", default=300, type=int,
         help="Minimum read length")
     parser.add_argument(
@@ -205,15 +208,15 @@ following sections for further indications of failed or inconclusive results.
     if not args.hide_coverage:
         section = report_doc.add_section()
         section.markdown('''
-### Genome coverage
-Plots below indicate depth of coverage from data used within the Artic analysis
-coloured by amplicon pool.
-For adequate variant calling depth should be at least 30X in any region.
+### Genome coverage Plots below indicate depth of coverage from data used
+within the Artic analysis coloured by amplicon pool.  Variant filtering during
+the ARTIC analysis mandates a minimum coverage of at least {}X at
+variant/genotyping loci for a call to be made.
 
 ***NB: To better display all possible data, the depth axes of the plots below
 are not tied between plots for different samples. Care should be taken in
 comparing depth across samples.***
-''')
+'''.format(args.min_cover))
 
         # depth summary by amplicon pool
         df = read_files(args.depths)
