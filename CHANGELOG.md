@@ -4,20 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.3]
+### Changed
+- Updated medaka to v1.4.2.
+- Updated aplanat to v0.4.0.
+
 ## [v0.2.2]
 ### Added
-- Added summary of software parameters section to report
+- Added summary of software parameters section to report.
 ### Changed
 - genotype_variants option can now be used without specifying a path, falling
   back to the scheme default, if one exists.
-- Removed vestigial spike-seq scheme versions
+- Removed vestigial spike-seq scheme versions.
 ### Fixed
-- Updated allVariants step to normalise REF fields to fix vcf merge issue
-- Prevented nextclade from using all available threads
+- Updated allVariants step to normalise REF fields to fix vcf merge issue.
+- Prevented nextclade from using all available threads.
 
 ## [v0.2.1]
 ### Fixed
-- Intermittent error producing genotyping summary
+- Intermittent error producing genotyping summary.
 
 ## [v0.2.0]
 ### Added
