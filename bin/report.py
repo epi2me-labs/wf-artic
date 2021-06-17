@@ -112,6 +112,7 @@ def main():
     section = report_doc.add_section()
     section.markdown('''
 ### Read Quality control
+
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
@@ -180,7 +181,9 @@ This section displays basic QC metrics indicating read data quality.
 
     section = report_doc.add_section()
     section.markdown("""
-### Artic Analysis status The panel below lists samples which failed to produce
+### Artic Analysis status
+
+The panel below lists samples which failed to produce
 results from the primary ARTIC analysis. Samples not listed here were analysed
 successfully, but may still contain inconclusive or invalid results. See the
 following sections for further indications of failed or inconclusive results.
@@ -208,7 +211,9 @@ following sections for further indications of failed or inconclusive results.
     if not args.hide_coverage:
         section = report_doc.add_section()
         section.markdown('''
-### Genome coverage Plots below indicate depth of coverage from data used
+### Genome coverage
+
+Plots below indicate depth of coverage from data used
 within the Artic analysis coloured by amplicon pool.  Variant filtering during
 the ARTIC analysis mandates a minimum coverage of at least {}X at
 variant/genotyping loci for a call to be made.
@@ -345,6 +350,7 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
     section = report_doc.add_section()
     section.markdown('''
 ### Software versions
+
 The table below highlights versions of key software used within the analysis.
 ''')
     req = [
@@ -358,6 +364,7 @@ The table below highlights versions of key software used within the analysis.
     section = report_doc.add_section()
     section.markdown('''
 ### Workflow parameters
+
 The table below highlights values of the main parameters used in this analysis.
 ''')
     df_params = load_params(args.params)
