@@ -117,10 +117,10 @@ This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
     seq_summary = read_files(args.summaries)
-    total_bases = seq_summary['sequence_length_template'].sum()
+    total_bases = seq_summary['read_length'].sum()
     mean_length = total_bases / len(seq_summary)
-    median_length = np.median(seq_summary['sequence_length_template'])
-    datas = [seq_summary['sequence_length_template']]
+    median_length = np.median(seq_summary['read_length'])
+    datas = [seq_summary['read_length']]
     length_hist = hist.histogram(
         datas, colors=[Colors.cerulean], binwidth=50,
         title="Read length distribution.",
@@ -139,7 +139,7 @@ This section displays basic QC metrics indicating read data quality.
         "Mean: {:.0f}. Median: {:.0f}".format(
             mean_length, median_length))
 
-    datas = [seq_summary['mean_qscore_template']]
+    datas = [seq_summary['mean_quality']]
     mean_q, median_q = np.mean(datas[0]), np.median(datas[0])
     q_hist = hist.histogram(
         datas, colors=[Colors.cerulean], bins=100,
@@ -154,8 +154,8 @@ This section displays basic QC metrics indicating read data quality.
 
     # barcode count plot
     good_reads = seq_summary.loc[
-        (seq_summary['sequence_length_template'] > args.min_len)
-        & (seq_summary['sequence_length_template'] < args.max_len)]
+        (seq_summary['read_length'] > args.min_len)
+        & (seq_summary['read_length'] < args.max_len)]
     barcode_counts = (
         pd.DataFrame(good_reads['sample_name'].value_counts())
         .sort_index()

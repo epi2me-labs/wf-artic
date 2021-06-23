@@ -115,7 +115,7 @@ process preArticQC {
     output:
         file "${sample_name}.stats"
     """
-    seq_summary.py $directory ${sample_name}.stats --sample_name $sample_name
+    fastcat -s ${sample_name} -r ${sample_name}.stats -x ${directory}
     """
 }
 
