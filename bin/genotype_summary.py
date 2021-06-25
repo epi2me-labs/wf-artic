@@ -64,6 +64,9 @@ def extract_calls(df, chrom, pos, ref):
     if df_calls.empty:
         return []
 
+    # Note: due to issue in pyvcf used in artic
+    # https://github.com/jamescasbon/PyVCF/issues/329
+    df_calls[QUAL] = df_calls[QUAL].replace('.', 0)
     df_calls[QUAL] = pd.to_numeric(df_calls[QUAL])
 
     calls_list = []

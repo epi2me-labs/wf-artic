@@ -5,10 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
-### Changed
+### Fixed
 - Updated medaka to v1.4.3 for model pre-download.
+- Work around issue where pyvcf writes QUAL values as '.' and not 0
+### Changed
+- Removed the autodetect sample_id option for now
 ### Added
 - Field `alias` in sample sheet CSV serves as alternative to `sample_name`.
+
 
 ## [v0.2.3]
 ### Changed
