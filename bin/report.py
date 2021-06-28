@@ -13,6 +13,13 @@ import numpy as np
 import pandas as pd
 
 
+# software versions reported (from the environment where this script runs)
+# TODO: pass all these through using --versions
+software_versions = [
+    'np-artic', 'medaka', 'minimap2', 'bcftools', 'nextclade-cli',
+    'samtools', 'bcftools']
+
+
 def load_params(path):
     """Load the parameters csv into a dataframe."""
     params_cols = ['Name', 'Value']
@@ -103,6 +110,9 @@ def main():
     parser.add_argument(
         "--params", default=None,
         help="A csv containing the parameter key/values")
+    parser.add_argument(
+        "--versions",
+        help="CSV containing name,version for additional software versions.")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
@@ -353,11 +363,9 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
 
 The table below highlights versions of key software used within the analysis.
 ''')
-    req = [
-        'np-artic', 'medaka', 'minimap2', 'bcftools', 'nextclade-cli',
-        'samtools', 'bcftools']
     versions = conda_versions.scrape_data(
-        as_dataframe=True, include=req)
+        as_dataframe=True, include=software_versions,
+        version_dir=args.versions)
     section.table(versions[['Name', 'Version', 'Build']], index=False)
 
     # Params reporting

@@ -153,15 +153,16 @@ process report {
     label "artic"
     cpus 1
     input:
-        file "depth_stats/*"
-        file "read_stats/*"
-        file "nextclade.json"
-        file "pangolin.csv"
-        file "genotypes/*"
-        file "vcf_stats/*"
-        file "consensus_status.txt"
+        path "depth_stats/*"
+        path "read_stats/*"
+        path "nextclade.json"
+        path "pangolin.csv"
+        path "genotypes/*"
+        path "vcf_stats/*"
+        path "consensus_status.txt"
+        path "versions/*"
     output:
-        file "wf-artic-report.html"
+        path "wf-artic-report.html"
     script:
     // when genotype_variants is false the channel contains a mock file
     def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
@@ -184,7 +185,8 @@ process report {
         --revision $workflow.revision --params params.csv --commit $workflow.commitId \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
-        --bcftools_stats vcf_stats/* $genotype
+        --bcftools_stats vcf_stats/* $genotype \
+        --versions versions
     """
 }
 
@@ -254,10 +256,12 @@ process pangolin {
     label "pangolin"
     cpus 1
     input:
-        file "consensus.fasta"
+        path "consensus.fasta"
     output:
-        file "lineage_report.csv"
+        path "lineage_report.csv", emit: report
+        path "pangolin.version", emit: version
     """
+    pangolin --version 2>&1 | sed 's/ /,/' > pangolin.version
     pangolin consensus.fasta
     """
 }
@@ -290,6 +294,7 @@ workflow pipeline {
         primers
         ref_variants
     main:
+        software_versions = Channel.empty()
         combined_genotype_summary = null
         scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
@@ -309,16 +314,18 @@ workflow pipeline {
         // nextclade
         clades = nextclade(all_consensus[0], reference, primers)
         // pangolin
-        lineages = pangolin(all_consensus[0])
+        pangolin(all_consensus[0])
+        software_versions = software_versions.mix(pangolin.out.version)
         // report
         html_doc = report(
             runArtic.out.depth_stats.collect(),
             read_summaries.collect(), 
             clades.collect(),
-            lineages.collect(),
+            pangolin.out.report.collect(),
             genotype_summary.collect(),
             runArtic.out.vcf_stats.collect(),
-            all_consensus[1])
+            all_consensus[1],
+            software_versions.collect())
         results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), 
             html_doc, combined_genotype_summary)
     emit:

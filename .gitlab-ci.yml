@@ -2,6 +2,7 @@ include:
     - project: "epi2melabs/ci-templates"
       file: "wf-containers.yaml"
 
+
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/sars-samples-demultiplexed/ --samples test_data/sample_sheet"
 
@@ -12,5 +13,6 @@ release-pangolin:
     variables:
         AUX_IMAGE_NAME: "pangolin"
         AUX_IMAGE_ENVFILE: "environment_pangolin.yaml"
+        AUX_IMAGE_DOCKERFILE: "Dockerfile_pangolin"
 
 
