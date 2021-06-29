@@ -2,22 +2,15 @@
 """Create report file."""
 
 import argparse
+import os
 
 from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
-import conda_versions
 import numpy as np
 import pandas as pd
-
-
-# software versions reported (from the environment where this script runs)
-# TODO: pass all these through using --versions
-software_versions = [
-    'np-artic', 'medaka', 'minimap2', 'bcftools', 'nextclade-cli',
-    'samtools', 'bcftools']
 
 
 def load_params(path):
@@ -112,7 +105,7 @@ def main():
         help="A csv containing the parameter key/values")
     parser.add_argument(
         "--versions",
-        help="CSV containing name,version for additional software versions.")
+        help="directory contained CSVs containing name,version.")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
@@ -363,10 +356,20 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
 
 The table below highlights versions of key software used within the analysis.
 ''')
-    versions = conda_versions.scrape_data(
-        as_dataframe=True, include=software_versions,
-        version_dir=args.versions)
-    section.table(versions[['Name', 'Version', 'Build']], index=False)
+    versions = list()
+    if args.versions is not None:
+        for fname in os.listdir(args.versions):
+            print("Reading versions from file:", fname)
+            try:
+                with open(os.path.join(args.versions, fname), 'r') as fh:
+                    for line in fh.readlines():
+                        name, version = line.strip().split(',')
+                        versions.append((name, version))
+            except Exception as e:
+                print(e)
+                pass
+    versions = pd.DataFrame(versions, columns=('Name', 'Version'))
+    section.table(versions, index=False)
 
     # Params reporting
     section = report_doc.add_section()

@@ -149,6 +149,23 @@ process combineGenotypeSummaries {
 }
 
 
+process get_versions {
+    label "artic"
+    cpus 1
+    output:
+        path "versions.txt"
+    script:
+    """
+    medaka --version | sed 's/ /,/' >> versions.txt
+    minimap2 --version | sed 's/^/minimap2,/' >> versions.txt
+    bcftools --version | head -n 1 | sed 's/ /,/' >> versions.txt
+    samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
+    nextclade --version | sed 's/^/nextclade,/' >> versions.txt
+    artic --version | sed 's/ /,/' >> versions.txt
+    """
+}
+
+
 process report {
     label "artic"
     cpus 1
@@ -294,7 +311,7 @@ workflow pipeline {
         primers
         ref_variants
     main:
-        software_versions = Channel.empty()
+        software_versions = get_versions()
         combined_genotype_summary = null
         scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
