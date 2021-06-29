@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated medaka to v1.4.3 for model pre-download.
 - Work around issue where pyvcf writes QUAL values as '.' and not 0
 ### Changed
-- Removed the autodetect sample_id option for now
+- Removed the autodetect sample_id option for now.
+- Updated default model to be a variant calling one. Although labelled as
+  PromethION specific (`_prom` in name), this model should be preferred
+  on all platforms of non-variant (consensus) platform specific models.
 ### Added
 - Field `alias` in sample sheet CSV serves as alternative to `sample_name`.
 
