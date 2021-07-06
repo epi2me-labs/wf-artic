@@ -88,7 +88,7 @@ process preArticQC {
     output:
         file "${sample_name}.stats"
     """
-    fastcat -s ${sample_name} -r ${sample_name}.stats -x ${directory}
+    fastcat -s ${sample_name} -r ${sample_name}.stats -x ${directory} > /dev/null
     """
 }
 
