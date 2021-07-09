@@ -439,29 +439,57 @@ workflow {
             .map { row -> tuple(row.barcode, row.sample_name) }
     }
 
-    // resolve whether we have demultiplexed data or single sample
-    not_barcoded = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
+    input_folder = params.fastq
 
-    // remove empty barcode_dirs
-    barcode_dirs = file("$params.fastq/barcode*", type: 'dir', maxdepth: 1)
-    valid_barcode_dirs = []
-    invalid_barcode_dirs = []
-    for (d in barcode_dirs) {
-        if(!file("${d}/*.fastq*", type:'file', checkIfExists:true)) {
-            invalid_barcode_dirs << d
-        } else {
-            valid_barcode_dirs << d
+    // rework EPI2ME flattened directory structure into standard form
+    //   files are matched on barcode\d+ and moved into corresponding
+    //   subdirectories ready for processing.
+    if (params.sanitize_fastq) {
+        println("Running sanitization.")
+        staging = new File("${params.out_dir}/staging")
+        println(" - Moving files to: ${staging}")
+        staging.mkdir()
+        files = file("${input_folder}/*.fastq*", type: 'file', maxdepth: 1)
+        for (fastq in files) {
+            fname = fastq.getFileName()
+            // find barcode
+            pattern = ~/barcode\d+/
+            matcher = fname =~ pattern
+            if (!matcher.find()) {
+                // not barcoded - leave alone
+                fastq.renameTo("${staging}/${fname}")
+            } else {
+                bc_dir = new File("${staging}/${matcher[0]}")
+                bc_dir.mkdir()
+                fastq.renameTo("${staging}/${matcher[0]}/${fname}")
+            }
         }
+        input_folder = staging
+        println(" - Finished sanitization.")
     }
 
+    // resolve whether we have demultiplexed data or single sample
+    barcode_dirs = file("$input_folder/barcode*", type: 'dir', maxdepth: 1)
+    not_barcoded = file("$input_folder/*.fastq*", type: 'file', maxdepth: 1)
     if (barcode_dirs) {
         println("Found barcode directories")
+        // remove empty barcode_dirs
+        valid_barcode_dirs = []
+        invalid_barcode_dirs = []
+        for (d in barcode_dirs) {
+            if(!file("${d}/*.fastq*", type:'file', checkIfExists:true)) {
+                invalid_barcode_dirs << d
+            } else {
+                valid_barcode_dirs << d
+            }
+        }
         if (invalid_barcode_dirs.size() > 0) {
             println("Some barcode directories did not contain .fastq(.gz) files:")
             for (d in invalid_barcode_dirs) {
                 println("- ${d}")
             }
         }
+        // link sample names to barcode through sample sheet
         if (!sample_sheet) {
             sample_sheet = Channel
                 .fromPath(valid_barcode_dirs)
@@ -479,7 +507,7 @@ workflow {
         println("Found fastq files, assuming single sample")
         sample = (params.samples == null) ? "unknown" : params.samples
         Channel
-            .fromPath(params.fastq, type: 'dir', maxDepth:1)
+            .fromPath(input_folder, type: 'dir', maxDepth:1)
             .map { path -> tuple(path, sample) }
             .set{ samples }
     }
