@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+include { fastq_ingress } from './lib/fastqingress' 
+
 valid_schemes = ["SARS-CoV-2", "spike-seq"]
 valid_scheme_versions = ["V1", "V2", "V3", "V4", "V1200"]
 
@@ -105,7 +107,7 @@ process runArtic {
         tuple path("${sample_name}.merged.gvcf.named.vcf.gz"), path("${sample_name}.merged.gvcf.named.vcf.gz.tbi"), emit: merged_gvcf
         path "${sample_name}.depth.txt", emit: depth_stats
         path "${sample_name}.pass.named.stats", emit: vcf_stats
-        tuple path("${sample_name}.sorted.bam"), path("${sample_name}.sorted.bam.bai"), emit: bam
+        tuple path("${sample_name}.primertrimmed.rg.sorted.bam"), path("${sample_name}.primertrimmed.rg.sorted.bam.bai"), emit: bam
     """
     run_artic.sh \
         ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
@@ -312,7 +314,7 @@ workflow pipeline {
         ref_variants
     main:
         software_versions = get_versions()
-        combined_genotype_summary = null
+        combined_genotype_summary = Channel.empty()
         scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
@@ -343,8 +345,9 @@ workflow pipeline {
             runArtic.out.vcf_stats.collect(),
             all_consensus[1],
             software_versions.collect())
-        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), 
-            html_doc, combined_genotype_summary)
+        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(),
+            runArtic.out.bam.flatten(), html_doc, combined_genotype_summary)
+        results.view()
     emit:
         results
 }
@@ -430,87 +433,9 @@ workflow {
         ref_variants = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
     }
 
-    // check sample sheet
-    sample_sheet = null
-    if (params.samples) {
-        sample_sheet = Channel.fromPath(params.samples, checkIfExists: true)
-        sample_sheet = checkSampleSheet(sample_sheet)
-            .splitCsv(header: true)
-            .map { row -> tuple(row.barcode, row.sample_name) }
-    }
-
-    input_folder = params.fastq
-
-    // rework EPI2ME flattened directory structure into standard form
-    //   files are matched on barcode\d+ and moved into corresponding
-    //   subdirectories ready for processing.
-    if (params.sanitize_fastq) {
-        println("Running sanitization.")
-        staging = new File("${params.out_dir}/staging")
-        println(" - Moving files to: ${staging}")
-        staging.mkdir()
-        files = file("${input_folder}/*.fastq*", type: 'file', maxdepth: 1)
-        for (fastq in files) {
-            fname = fastq.getFileName()
-            // find barcode
-            pattern = ~/barcode\d+/
-            matcher = fname =~ pattern
-            if (!matcher.find()) {
-                // not barcoded - leave alone
-                fastq.renameTo("${staging}/${fname}")
-            } else {
-                bc_dir = new File("${staging}/${matcher[0]}")
-                bc_dir.mkdir()
-                fastq.renameTo("${staging}/${matcher[0]}/${fname}")
-            }
-        }
-        input_folder = staging
-        println(" - Finished sanitization.")
-    }
-
-    // resolve whether we have demultiplexed data or single sample
-    barcode_dirs = file("$input_folder/barcode*", type: 'dir', maxdepth: 1)
-    not_barcoded = file("$input_folder/*.fastq*", type: 'file', maxdepth: 1)
-    if (barcode_dirs) {
-        println("Found barcode directories")
-        // remove empty barcode_dirs
-        valid_barcode_dirs = []
-        invalid_barcode_dirs = []
-        for (d in barcode_dirs) {
-            if(!file("${d}/*.fastq*", type:'file', checkIfExists:true)) {
-                invalid_barcode_dirs << d
-            } else {
-                valid_barcode_dirs << d
-            }
-        }
-        if (invalid_barcode_dirs.size() > 0) {
-            println("Some barcode directories did not contain .fastq(.gz) files:")
-            for (d in invalid_barcode_dirs) {
-                println("- ${d}")
-            }
-        }
-        // link sample names to barcode through sample sheet
-        if (!sample_sheet) {
-            sample_sheet = Channel
-                .fromPath(valid_barcode_dirs)
-                .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
-                .map { path -> tuple(path.baseName, path.baseName) }
-        }
-        Channel
-            .fromPath(valid_barcode_dirs)
-            .filter(~/.*barcode[0-9]{1,3}$/)  // up to 192
-            .map { path -> tuple(path.baseName, path) }
-            .join(sample_sheet)
-            .map { barcode, path, sample -> tuple(path, sample) }
-            .set{ samples }
-    } else if (not_barcoded) {
-        println("Found fastq files, assuming single sample")
-        sample = (params.samples == null) ? "unknown" : params.samples
-        Channel
-            .fromPath(input_folder, type: 'dir', maxDepth:1)
-            .map { path -> tuple(path, sample) }
-            .set{ samples }
-    }
+    // check fastq dataset and run workflow
+    samples = fastq_ingress(
+        params.fastq, workDir, params.samples, params.sanitize_fastq)
     results = pipeline(samples, scheme_directory, reference, primers, ref_variants)
     output(results)
 }
