@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.1]
+### Added
+- Per-sample bam files now published to output directory.
+### Changed
+- Data ingress now performed by standard module.
+
 ## [v0.3.0]
 ### Fixed
 - Updated medaka to v1.4.3 for model pre-download.
@@ -17,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Field `alias` in sample sheet CSV serves as alternative to `sample_name`.
 - Added V4 primerscheme to data directory.
-
 
 ## [v0.2.3]
 ### Changed
