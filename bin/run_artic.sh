@@ -19,6 +19,7 @@ function mock_artic {
 #CHROM${TAB}POS${TAB}ID${TAB}REF${TAB}ALT${TAB}QUAL${TAB}FILTER${TAB}INFO${TAB}FORMAT${TAB}SAMPLE
 EOF
     bgzip > "${sample_name}.pass.vcf.gz"
+    cp "${sample_name}.pass.vcf.gz" "${sample_name}.merged.gvcf.vcf.gz"
     # This is picked up later in process allConsensus
     echo -e ">${sample_name} Artic-Fail\nN" > "${sample_name}.consensus.fasta"
 }
