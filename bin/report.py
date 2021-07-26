@@ -2,10 +2,10 @@
 """Create report file."""
 
 import argparse
-import os
 
 from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
+from aplanat.components import simple as scomponents
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
@@ -350,26 +350,8 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
         df = df.sort_values(by=['Sample', 'CH1-Target'], ascending=True)
         section.table(df, index=False)
 
-    section = report_doc.add_section()
-    section.markdown('''
-### Software versions
-
-The table below highlights versions of key software used within the analysis.
-''')
-    versions = list()
-    if args.versions is not None:
-        for fname in os.listdir(args.versions):
-            print("Reading versions from file:", fname)
-            try:
-                with open(os.path.join(args.versions, fname), 'r') as fh:
-                    for line in fh.readlines():
-                        name, version = line.strip().split(',')
-                        versions.append((name, version))
-            except Exception as e:
-                print(e)
-                pass
-    versions = pd.DataFrame(versions, columns=('Name', 'Version'))
-    section.table(versions, index=False)
+    section = report_doc.add_section(
+        section=scomponents.version_table(args.versions))
 
     # Params reporting
     section = report_doc.add_section()
