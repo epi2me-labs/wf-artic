@@ -39,11 +39,11 @@ def load_params(path):
     return df_params
 
 
-def read_files(summaries, sep='\t'):
+def read_files(summaries, **kwargs):
     """Read a set of files and join to single dataframe."""
     dfs = list()
     for fname in sorted(summaries):
-        dfs.append(pd.read_csv(fname, sep=sep))
+        dfs.append(pd.read_csv(fname, **kwargs))
     return pd.concat(dfs)
 
 
@@ -119,7 +119,8 @@ def main():
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
-    seq_summary = read_files(args.summaries)
+    seq_summary = read_files(
+        args.summaries, sep="\t", converters={'sample_name': str})
     total_bases = seq_summary['read_length'].sum()
     mean_length = total_bases / len(seq_summary)
     median_length = np.median(seq_summary['read_length'])
@@ -227,7 +228,8 @@ comparing depth across samples.***
 '''.format(args.min_cover))
 
         # depth summary by amplicon pool
-        df = read_files(args.depths)
+        df = read_files(
+            args.depths, sep="\t", converters={'sample_name': str})
         plots_pool = list()
         plots_orient = list()
         plots_combined = list()
