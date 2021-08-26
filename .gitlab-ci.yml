@@ -8,11 +8,11 @@ variables:
 
 
 # pangolin to dockerhub, we don't expect to change this often so a simple manual build
+# reminder: update AUX_IMAGE_TAG if the aux container package versions are changed
 release-pangolin:
     extends: .aux-container
     variables:
         AUX_IMAGE_NAME: "pangolin"
         AUX_IMAGE_ENVFILE: "environment_pangolin.yaml"
         AUX_IMAGE_DOCKERFILE: "Dockerfile_pangolin"
-
-
+        AUX_IMAGE_TAG: "3.1.4"
