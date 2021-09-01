@@ -25,6 +25,7 @@ Options:
     --medaka_model              STR     Medaka model name (default: $params.medaka_model)
     --min_len                   INT     Minimum read length (default: set by scheme)
     --max_len                   INT     Maximum read length (default: set by scheme)
+    --max_softclip_length       INT     Maximum alignment overhang length, to remove possibly chimeric reads (default: 0)
     --scheme_name               STR     Scheme to use ($valid_schemes) (default: SARS-CoV-2)
     --scheme_version            STR     Primer scheme version ($valid_scheme_versions)
                                         (default: $params.scheme_version)
@@ -112,7 +113,7 @@ process runArtic {
     run_artic.sh \
         ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.full_scheme_name} \
-        ${task.cpus}
+        ${task.cpus} ${params._max_softclip_length}
     bcftools stats ${sample_name}.pass.named.vcf.gz > ${sample_name}.pass.named.stats 
     """
 }
@@ -403,6 +404,14 @@ workflow {
     } else {
         params._max_len = params.max_len
         params.remove('max_len')
+    }
+    if (!params.max_softclip_length) {
+        params.remove('max_softclip_length')
+        params._max_softclip_length = 0
+    }
+    else{
+        params._max_softclip_length = params.max_softclip_length
+        params.remove('max_softclip_length')
     }
     println("")
     println("Parameter summary")
