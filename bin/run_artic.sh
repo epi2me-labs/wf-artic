@@ -8,6 +8,7 @@ max_len=$4
 medaka_model=$5
 full_scheme_name=$6
 threads=$7
+max_softclip_length=$8
 
 function mock_artic {
     # write an empty VCF
@@ -41,6 +42,7 @@ artic minion --medaka --normalise 200 --threads ${threads} \
     --read-file ${READFILE} \
     --medaka-model ${medaka_model} \
     --scheme-directory primer_schemes \
+    --max-softclip-length ${max_softclip_length} \
     ${full_scheme_name} ${sample_name} \
     || mock_artic
 
