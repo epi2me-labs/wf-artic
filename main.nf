@@ -260,14 +260,21 @@ process nextclade {
         file "consensus.fasta"
         file "reference.fasta"
         file scheme_bed
+        file "nextclade_dataset"
     output:
         file "nextclade.json"
     """
     cp -L reference.fasta ref.fasta
     scheme_to_nextclade.py $scheme_bed ref.fasta primers.csv
-    nextclade \
-        --input-fasta consensus.fasta --input-pcr-primers primers.csv \
-        --output-json nextclade.json --jobs 1
+    nextclade run \
+        --input-fasta consensus.fasta \
+        --reference nextclade_dataset/reference.fasta \
+        --input-pcr-primers primers.csv \
+        --input-tree nextclade_dataset/tree.json \
+        --input-qc-config nextclade_dataset/qc.json \
+        --input-gene-map nextclade_dataset/genemap.gff \
+        --output-json nextclade.json \
+        --jobs 1
     """
 }
 
@@ -313,6 +320,7 @@ workflow pipeline {
         reference
         primers
         ref_variants
+        nextclade_dataset
     main:
         software_versions = get_versions()
         combined_genotype_summary = Channel.empty()
@@ -332,7 +340,8 @@ workflow pipeline {
             genotype_summary = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
         }
         // nextclade
-        clades = nextclade(all_consensus[0], reference, primers)
+        clades = nextclade(
+            all_consensus[0], reference, primers, nextclade_dataset)
         // pangolin
         pangolin(all_consensus[0])
         software_versions = software_versions.mix(pangolin.out.version)
@@ -420,8 +429,12 @@ workflow {
     println("")
 
     params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
+
     schemes = projectDir + '/data/primer_schemes'
     scheme_directory = file(schemes, type: 'dir', checkIfExists:true)
+    nextclade = projectDir + '/data/nextclade/'
+    nextclade_dataset = file(nextclade, type: 'dir', checkIfExists:true)
+
     reference = file(
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.reference.fasta",
         type:'file', checkIfExists:true)
@@ -445,6 +458,7 @@ workflow {
     // check fastq dataset and run workflow
     samples = fastq_ingress(
         params.fastq, workDir, params.samples, params.sanitize_fastq)
-    results = pipeline(samples, scheme_directory, reference, primers, ref_variants)
+    results = pipeline(samples, scheme_directory, reference, 
+        primers, ref_variants, nextclade_dataset)
     output(results)
 }
