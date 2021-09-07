@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [v0.3.3]
+### Changed
+- Update nextclade to c++ version 1.3.0, install via bioconda.
+- Update aplanat to v0.5.4.
+### Added
+- V4.1 primer set for spike-seq.
+- Tag for pangolin image is now specified in nextflow config.
+- Integrate max_softclip_length parameter to be passed into artic minion.
 ### Fixed
 - Parsing of sample_name column from summary files during report curation.
 
