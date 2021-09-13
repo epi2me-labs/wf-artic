@@ -38,6 +38,7 @@ Options:
     --report_lineage            BOOL    Show results of Pangolin analysis in report.
     --report_coverage           BOOL    Show genome coverage traces in report.
     --report_variant_summary    BOOL    Show / hide variant information in report. (default: true)
+    --report_name               STR     Optional report suffix (default: $params.report_name)
 
 Metadata:
     --timestamp                 STR     Timestamp for the genotyping report
@@ -182,9 +183,10 @@ process report {
         path "consensus_status.txt"
         path "versions/*"
     output:
-        path "wf-artic-report.html"
+        path "wf-artic-*.html"
     script:
     // when genotype_variants is false the channel contains a mock file
+    def report_name = "wf-artic-" + params.report_name + '.html'
     def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
     def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
@@ -200,7 +202,7 @@ process report {
     echo "$nextclade"
     echo "$paramsMap" > params.csv
     report.py \
-        consensus_status.txt wf-artic-report.html \
+        consensus_status.txt $report_name \
         $pangolin $nextclade $coverage $var_summary \
         --revision $workflow.revision --params params.csv --commit $workflow.commitId \
         --min_len $params._min_len --max_len $params._max_len --report_depth \
