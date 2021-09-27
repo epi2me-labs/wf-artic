@@ -182,8 +182,10 @@ process report {
         path "vcf_stats/*"
         path "consensus_status.txt"
         path "versions/*"
+        path "consensus_fasta"
     output:
         path "wf-artic-*.html"
+        path "*.json"
     script:
     // when genotype_variants is false the channel contains a mock file
     def report_name = "wf-artic-" + params.report_name + '.html'
@@ -208,7 +210,8 @@ process report {
         --min_len $params._min_len --max_len $params._max_len --report_depth \
         $params.report_depth --depths depth_stats/* --summaries read_stats/* \
         --bcftools_stats vcf_stats/* $genotype \
-        --versions versions
+        --versions versions \
+        --consensus_fasta $consensus_fasta
     """
 }
 
@@ -356,10 +359,10 @@ workflow pipeline {
             genotype_summary.collect(),
             runArtic.out.vcf_stats.collect(),
             all_consensus[1],
-            software_versions.collect())
-        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(),
-            runArtic.out.bam.flatten(), html_doc, combined_genotype_summary)
-        results.view()
+            software_versions.collect(),
+            all_consensus[0])
+        results = all_consensus[0].concat(all_consensus[1], all_variants[0].flatten(), clades[0],
+            runArtic.out.bam.flatten(), html_doc[0], html_doc[1], combined_genotype_summary, pangolin.out.report)
     emit:
         results
 }

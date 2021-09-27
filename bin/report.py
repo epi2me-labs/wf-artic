@@ -2,6 +2,7 @@
 """Create report file."""
 
 import argparse
+import json
 
 from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
@@ -11,6 +12,7 @@ from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
 import numpy as np
 import pandas as pd
+import pysam
 
 
 def load_params(path):
@@ -45,6 +47,43 @@ def read_files(summaries, **kwargs):
     for fname in sorted(summaries):
         dfs.append(pd.read_csv(fname, **kwargs))
     return pd.concat(dfs)
+
+
+def output_json(df, consensus_fasta):
+    """Read depth stats df and create JSON output."""
+    grouped_by_sample = df.groupby('sample_name')
+    all_json = {}
+    for sample in grouped_by_sample.groups.keys():
+        group_by_primer = grouped_by_sample.get_group(
+                          sample).groupby('primer_set')
+        rg1 = group_by_primer.get_group(1).reset_index()
+        rg2 = group_by_primer.get_group(2).reset_index()
+        newdf = pd.DataFrame()
+        newdf['start'] = rg1['pos'] - 10
+        newdf['start'] = newdf['start'].clip(lower=0).astype(int)
+        newdf['end'] = rg1['pos'] + 10
+        newdf['end'] = newdf['end'].astype(int)
+        newdf['fwd'] = rg1['depth_fwd'] + rg2['depth_fwd']
+        newdf['rev'] = rg1['depth_rev'] + rg2['depth_rev']
+        newdf['rg1'] = rg1['depth']
+        newdf['rg2'] = rg2['depth']
+        # preserve data type by converting column by column
+        final = list(list(x) for x in zip(*(
+                newdf[x].values.tolist() for x in newdf.columns)))
+        all_json[sample] = final
+    final_json = {'data': []}
+    # parse the consensus fasta to get extra info required
+    with pysam.FastxFile(consensus_fasta) as fh:
+        for entry in fh:
+            all_json[entry.name][-1][1] = len(entry.sequence)
+            final_json['data'].append({
+               'barcode': entry.name,
+               'chromosome': entry.comment,
+               'seqlen': len(entry.sequence),
+               'ncount': (entry.sequence).count('N'),
+               'coverage': all_json[entry.name]
+            })
+    return(final_json)
 
 
 def main():
@@ -106,8 +145,10 @@ def main():
     parser.add_argument(
         "--versions",
         help="directory contained CSVs containing name,version.")
+    parser.add_argument(
+        "--consensus_fasta",
+        help="Fasta of all conesusus seqeunces")
     args = parser.parse_args()
-
     report_doc = report.WFReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic",
         revision=args.revision, commit=args.commit)
@@ -230,6 +271,11 @@ comparing depth across samples.***
         # depth summary by amplicon pool
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
+        epi2me_json = output_json(df, args.consensus_fasta)
+        json_object = json.dumps(epi2me_json, indent=4)
+        json_file = open("artic.json", "a")
+        json_file.write(json_object)
+        json_file.close()
         plots_pool = list()
         plots_orient = list()
         plots_combined = list()

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - V4.1 primer set for spike-seq.
 - Tag for pangolin image is now specified in nextflow config.
 - Integrate max_softclip_length parameter to be passed into artic minion.
+- Output artic.json.
 ### Fixed
 - Parsing of sample_name column from summary files during report curation.
 
