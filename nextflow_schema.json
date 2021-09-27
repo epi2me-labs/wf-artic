@@ -10,30 +10,110 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "properties": {}
+            "properties": {
+                "out_dir": {
+                    "type": "string",
+                    "default": "output"
+                },
+                "fastq": {
+                    "type": "string"
+                },
+                "sanitize_fastq": {
+                    "type": "string"
+                },
+                "samples": {
+                    "type": "string"
+                },
+                "report_name": {
+                    "type": "string",
+                    "default": "report"
+                },
+                "genotype_variants": {
+                    "type": "string"
+                },
+                "lab_id": {
+                    "type": "string"
+                },
+                "testkit": {
+                    "type": "string"
+                }
+            }
+        },
+        "advanced_options": {
+            "title": "Advanced options",
+            "type": "object",
+            "description": "Data filtering and algorithm options",
+            "default": "",
+            "properties": {
+                "min_len": {
+                    "type": "string"
+                },
+                "max_len": {
+                    "type": "string"
+                },
+                "medaka_model": {
+                    "type": "string",
+                    "default": "r941_prom_variant_g360"
+                }
+            }
+        },
+        "reporting_options": {
+            "title": "Reporting Options",
+            "type": "object",
+            "description": "Options controlling report outputs",
+            "default": "",
+            "properties": {
+                "report_depth": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "report_clade": {
+                    "type": "string",
+                    "default": "true"
+                },
+                "report_coverage": {
+                    "type": "string",
+                    "default": "true"
+                },
+                "report_lineage": {
+                    "type": "string",
+                    "default": "true"
+                },
+                "report_variant_summary": {
+                    "type": "string",
+                    "default": "true"
+                }
+            }
         },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "Reference genome related files and options required for the workflow.",
-            "properties": {}
+            "properties": {
+                "scheme_name": {
+                    "type": "string",
+                    "default": "SARS-CoV-2"
+                },
+                "scheme_version": {
+                    "type": "string",
+                    "default": "V3"
+                }
+            }
         },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
             "fa_icon": "fas fa-university",
             "description": "Parameters used to describe centralised config profiles. These should not be edited.",
-            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
-            "properties": {}
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline."
         },
         "max_job_request_options": {
             "title": "Max job request options",
             "type": "object",
             "fa_icon": "fab fa-acquisitions-incorporated",
             "description": "Set the top limit for requested resources for any single job.",
-            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
-            "properties": {}
+            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details."
         },
         "generic_options": {
             "title": "Generic options",
@@ -56,6 +136,12 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/advanced_options"
+        },
+        {
+            "$ref": "#/definitions/reporting_options"
+        },
+        {
             "$ref": "#/definitions/reference_genome_options"
         },
         {
@@ -69,95 +155,37 @@
         }
     ],
     "properties": {
-        "out_dir": {
-            "type": "string",
-            "default": "output"
-        },
-        "fastq": {
-            "type": "string"
-        },
-        "sanitize_fastq": {
-            "type": "string"
-        },
-        "samples": {
-            "type": "string"
-        },
-        "min_len": {
-            "type": "string"
-        },
-        "max_len": {
-            "type": "string"
-        },
-        "report_depth": {
-            "type": "integer",
-            "default": 100
-        },
-        "medaka_model": {
-            "type": "string",
-            "default": "r941_prom_variant_g360"
-        },
-        "scheme_name": {
-            "type": "string",
-            "default": "SARS-CoV-2"
-        },
-        "scheme_version": {
-            "type": "string",
-            "default": "V3"
-        },
-        "genotype_variants": {
-            "type": "string"
-        },
-        "report_clade": {
-            "type": "string",
-            "default": "true"
-        },
-        "report_lineage": {
-            "type": "string",
-            "default": "true"
-        },
-        "report_coverage": {
-            "type": "string",
-            "default": "true"
-        },
-        "report_variant_summary": {
-            "type": "string",
-            "default": "true"
-        },
-        "wfversion": {
-            "type": "string",
-            "default": "v0.3.3"
-        },
-        "pangolin_version": {
-            "type": "string",
-            "default": "3.1.4"
-        },
         "aws_image_prefix": {
             "type": "string"
         },
         "aws_queue": {
             "type": "string"
         },
-        "lab_id": {
-            "type": "string"
-        },
-        "testkit": {
-            "type": "string"
-        },
-        "report_name": {
+        "wfversion": {
             "type": "string",
-            "default": "report"
+            "default": "v0.3.3",
+            "hidden": true
+        },
+        "pangolin_version": {
+            "type": "string",
+            "default": "3.1.4",
+            "hidden": true
         },
         "_min_len": {
-            "type": "string"
+            "type": "string",
+            "hidden": true
         },
         "_max_len": {
-            "type": "string"
+            "type": "string",
+            "hidden": true
         },
         "_max_softclip_length": {
-            "type": "string"
+            "type": "string",
+            "hidden": true
         },
         "full_scheme_name": {
-            "type": "string"
+            "type": "string",
+            "hidden": true
         }
     }
 }
