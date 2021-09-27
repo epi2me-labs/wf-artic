@@ -97,9 +97,11 @@ def sanitize_fastq(input_folder, output_folder)
  */
 def resolve_barcode_structure(input_folder, sample_sheet)
 {
-    println("Checking input directory structure.")
+    println("Checking input directory structure: $input_folder")
     barcode_dirs = file("$input_folder/barcode*", type: 'dir', maxdepth: 1)
+    println("found: $barcode_dirs")
     not_barcoded = find_fastq("$input_folder/", 1)
+    println(find_fastq("$input_folder/barcode01/", 1)[0].toUri())
     samples = null
     if (barcode_dirs) {
         println(" - Found barcode directories")
@@ -107,7 +109,7 @@ def resolve_barcode_structure(input_folder, sample_sheet)
         valid_barcode_dirs = []
         invalid_barcode_dirs = []
         for (d in barcode_dirs) {
-            if(!find_fastq(d, 1)) {
+            if(!find_fastq(d.toUri(), 1)) {
                 invalid_barcode_dirs << d
             } else {
                 valid_barcode_dirs << d
