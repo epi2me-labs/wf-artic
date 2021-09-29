@@ -1,0 +1,254 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
+    "title": ". pipeline parameters",
+    "description": "",
+    "type": "object",
+    "definitions": {
+        "basic_input_output_options": {
+            "title": "Basic Input/Output Options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "properties": {
+                "out_dir": {
+                    "type": "string",
+                    "default": "output",
+                    "description": "Directory for output of all user-facing files."
+                },
+                "fastq": {
+                    "type": "string",
+                    "description": "Directory containing fastq input files. May contain fastq files directly or directories name barcodeXX relating to independent samples."
+                },
+                "samples": {
+                    "type": "string",
+                    "description": "CSV file with columns named `barcode` and `sample_name`. (or simply a sample name for non-multiplexed data)"
+                },
+                "genotype_variants": {
+                    "type": "string",
+                    "description": "Report genotyping information for scheme's known variants of interest, optionally provide file path as argument."
+                },
+                "sanitize_fastq": {
+                    "type": "boolean",
+                    "description": "Use additional heuristics to identify barcodes from file paths.",
+                    "help_text": "Enabling this option will group together files into samples by the presence of strings of the form `barcodeXXX` present in filenames, rather than simply files grouped into directories (as output by MinKNOW and the Guppy basecaller)."
+                }
+            },
+            "required": [
+                "fastq"
+            ]
+        },
+        "primer_scheme_selection": {
+            "title": "Primer Scheme Selection",
+            "type": "object",
+            "fa_icon": "fas fa-code",
+            "description": "Reference genome related files and options required for the workflow.",
+            "properties": {
+                "scheme_name": {
+                    "type": "string",
+                    "default": "SARS-CoV-2",
+                    "description": "Scheme name.",
+                    "enum": [
+                        "SARS-CoV-2",
+                        "spike-seq"
+                    ]
+                },
+                "scheme_version": {
+                    "type": "string",
+                    "default": "V3",
+                    "description": "Scheme version.",
+                    "enum": [
+                        "V1",
+                        "V2",
+                        "V3",
+                        "V4",
+                        "V4.1",
+                        "V1200"
+                    ]
+                }
+            }
+        },
+        "meta_data": {
+            "title": "Meta Data",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "report_name": {
+                    "type": "string",
+                    "default": "report",
+                    "description": "Output report filename suffix."
+                },
+                "lab_id": {
+                    "type": "string",
+                    "description": "Laboratory identifier, used in reporting."
+                },
+                "testkit": {
+                    "type": "string",
+                    "description": "Test kit identifier, used in reporting."
+                }
+            }
+        },
+        "advanced_options": {
+            "title": "Advanced options",
+            "type": "object",
+            "description": "Data filtering and algorithm options",
+            "default": "",
+            "properties": {
+                "min_len": {
+                    "type": "number",
+                    "description": "Minimum read length (default: set by scheme)."
+                },
+                "max_len": {
+                    "type": "number",
+                    "description": "Maximum read length (default: set by scheme)."
+                },
+                "max_softclip_length": {
+                    "type": "integer",
+                    "description": "Remove reads with alignments showing large softclipping"
+                },
+                "medaka_model": {
+                    "type": "string",
+                    "default": "r941_prom_variant_g360",
+                    "description": "Medaka model name.",
+                    "enum": [
+                        "r103_fast_variant_g507",
+                        "r103_hac_variant_g507",
+                        "r103_prom_variant_g3210",
+                        "r103_sup_variant_g507",
+                        "r941_min_fast_variant_g507",
+                        "r941_min_hac_variant_g507",
+                        "r941_min_sup_variant_g507",
+                        "r941_prom_fast_variant_g507",
+                        "r941_prom_hac_variant_g507",
+                        "r941_prom_sup_variant_g507",
+                        "r941_prom_variant_g303",
+                        "r941_prom_variant_g322",
+                        "r941_prom_variant_g360",
+                        "r941_prom_hac_variant_g507"
+                    ],
+                    "help_text": "The correct medaka model to use is determined by the Guppy basecaller version, see [Medaka Models](https://github.com/nanoporetech/medaka#models) for more information."
+                }
+            },
+            "fa_icon": "fas fa-cogs"
+        },
+        "reporting_options": {
+            "title": "Reporting Options",
+            "type": "object",
+            "description": "Options controlling report outputs",
+            "default": "",
+            "properties": {
+                "report_depth": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Min. depth for percentage coverage. (e.g. 89% genome covered at > `report_depth`)",
+                    "minimum": 0,
+                    "maximum": 100
+                },
+                "report_clade": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show results of Nextclade analysis in report."
+                },
+                "report_coverage": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show genome coverage traces in report."
+                },
+                "report_lineage": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show results of Pangolin analysis in report."
+                },
+                "report_variant_summary": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show / hide variant information in report."
+                }
+            },
+            "fa_icon": "fas fa-address-card",
+            "help_text": ""
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "far fa-question-circle",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "fa_icon": "fas fa-question-circle",
+                    "hidden": true
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/basic_input_output_options"
+        },
+        {
+            "$ref": "#/definitions/primer_scheme_selection"
+        },
+        {
+            "$ref": "#/definitions/meta_data"
+        },
+        {
+            "$ref": "#/definitions/advanced_options"
+        },
+        {
+            "$ref": "#/definitions/reporting_options"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
+        }
+    ],
+    "properties": {
+        "aws_image_prefix": {
+            "type": "string",
+            "hidden": true
+        },
+        "aws_queue": {
+            "type": "string",
+            "hidden": true
+        },
+        "wfversion": {
+            "type": "string",
+            "default": "v0.3.3",
+            "hidden": true
+        },
+        "pangolin_version": {
+            "type": "string",
+            "default": "3.1.4",
+            "hidden": true
+        },
+        "_min_len": {
+            "type": "string",
+            "hidden": true
+        },
+        "_max_len": {
+            "type": "string",
+            "hidden": true
+        },
+        "_max_softclip_length": {
+            "type": "string",
+            "hidden": true
+        },
+        "full_scheme_name": {
+            "type": "string",
+            "hidden": true
+        },
+        "monochrome_logs": {
+            "type": "boolean"
+        },
+        "validate_params": {
+            "type": "boolean",
+            "default": true
+        },
+        "show_hidden_params": {
+            "type": "boolean"
+        }
+    }
+}
