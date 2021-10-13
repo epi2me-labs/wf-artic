@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import os
 
 from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
@@ -72,6 +73,11 @@ def output_json(df, consensus_fasta):
                 newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
+    readcounts = {}
+    for filename in os.listdir('read_stats'):
+        num_lines = sum(1 for line in open(
+            os.path.join('read_stats', filename)))
+        readcounts[os.path.splitext(filename)[0]] = num_lines
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
         for entry in fh:
@@ -81,6 +87,7 @@ def output_json(df, consensus_fasta):
                'chromosome': entry.comment,
                'seqlen': len(entry.sequence),
                'ncount': (entry.sequence).count('N'),
+               'readcount': readcounts[entry.name],
                'coverage': all_json[entry.name]
             })
     return(final_json)
@@ -272,7 +279,7 @@ comparing depth across samples.***
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
         epi2me_json = output_json(df, args.consensus_fasta)
-        json_object = json.dumps(epi2me_json, indent=4)
+        json_object = json.dumps(epi2me_json, indent=4, separators=(',', ':'))
         json_file = open("artic.json", "a")
         json_file.write(json_object)
         json_file.close()
