@@ -77,7 +77,7 @@ def output_json(df, consensus_fasta):
     for filename in os.listdir('read_stats'):
         num_lines = sum(1 for line in open(
             os.path.join('read_stats', filename)))
-        readcounts[os.path.splitext(filename)[0]] = num_lines
+        readcounts[os.path.splitext(filename)[0]] = num_lines-1
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
         for entry in fh:
