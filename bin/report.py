@@ -16,32 +16,6 @@ import pandas as pd
 import pysam
 
 
-def load_params(path):
-    """Load the parameters csv into a dataframe."""
-    params_cols = ['Name', 'Value']
-    df_params = pd.read_csv(path, names=params_cols)
-
-    for _, row in df_params.iterrows():
-        name = row['Name']
-        value = row['Value']
-
-        if not name.startswith('_'):
-            continue
-
-        initial = name.lstrip('_')
-        matches = df_params.loc[df_params['Name'] == initial]
-        if matches.empty:
-            df_new = pd.DataFrame([[initial, value]], columns=params_cols)
-            df_params = df_params.append(df_new, ignore_index=True)
-        else:
-            matches['Value'] = value
-
-        df_params = df_params[df_params['Name'] != name]
-
-    df_params.fillna('N/A', inplace=True)
-    return df_params
-
-
 def read_files(summaries, **kwargs):
     """Read a set of files and join to single dataframe."""
     dfs = list()
@@ -405,18 +379,11 @@ reference calls of low coverage (<20 reads) which may therefore be inaccurate.
         df = df.sort_values(by=['Sample', 'CH1-Target'], ascending=True)
         section.table(df, index=False)
 
+    # Versions and params
     section = report_doc.add_section(
         section=scomponents.version_table(args.versions))
-
-    # Params reporting
-    section = report_doc.add_section()
-    section.markdown('''
-### Workflow parameters
-
-The table below highlights values of the main parameters used in this analysis.
-''')
-    df_params = load_params(args.params)
-    section.table(df_params, index=False)
+    section = report_doc.add_section(
+        section=scomponents.params_table(args.params))
 
     # write report
     report_doc.write(args.output)
