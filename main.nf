@@ -185,6 +185,7 @@ process report {
         path "depth_stats/*"
         path "read_stats/*"
         path "nextclade.json"
+        path nextclade_errors
         path "pangolin.csv"
         path "genotypes/*"
         path "vcf_stats/*"
@@ -208,7 +209,9 @@ process report {
     echo "$nextclade"
     report.py \
         consensus_status.txt $report_name \
-        $pangolin $nextclade $coverage $var_summary \
+        $pangolin $coverage $var_summary \
+        $nextclade \
+        --nextclade_errors $nextclade_errors \
         --revision $workflow.revision \
         --commit $workflow.commitId \
         --min_len $params._min_len \
@@ -220,6 +223,29 @@ process report {
         --versions versions \
         --params params.json \
         --consensus_fasta $consensus_fasta
+    """
+}
+
+
+process report_no_data {
+    label "artic"
+    cpus 1
+    input:
+        path "versions/*"
+        val error
+        path "params.json"
+    output:
+        path "wf-artic-*.html"
+        path "*.json", optional: true
+    script:
+    // when genotype_variants is false the channel contains a mock file
+    def report_name = "wf-artic-" + params.report_name + '.html'
+    def error_message = error
+    """
+    report_error.py \
+        --output $report_name \
+        --revision $workflow.revision --params params.json --commit $workflow.commitId \
+        --versions versions --error_message \"$error_message\"
     """
 }
 
@@ -276,6 +302,7 @@ process nextclade {
         file "nextclade_dataset"
     output:
         file "nextclade.json"
+        file "*.errors.csv"
     """
     cp -L reference.fasta ref.fasta
     scheme_to_nextclade.py $scheme_bed ref.fasta primers.csv
@@ -339,54 +366,64 @@ workflow pipeline {
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
         scheme_directory = copySchemeDir(scheme_directory)
-        read_summaries = preArticQC(samples)
-        artic = runArtic(samples, scheme_directory)
-        // collate consensus and variants
-        all_consensus = allConsensus(artic.consensus.collect())
-        all_variants = allVariants(
-            artic.pass_vcf.toList().transpose().toList(), reference)
-        // genotype summary
-        if (params.genotype_variants) {
-            genotype_summary = genotypeSummary(
-                artic.merged_gvcf.join(artic.primertrimmed_bam), ref_variants)
-            combined_genotype_summary = combineGenotypeSummaries(
-                genotype_summary.collect())
+        if ((samples.getClass() == String) && (samples.startsWith("Error"))){
+            samples = channel.of(samples)
+            html_doc = report_no_data(
+                software_versions.collect(),
+                samples,
+                workflow_params)
+            results = html_doc[0].concat(html_doc[1])
         } else {
-            genotype_summary = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
-        }
-        // nextclade
-        clades = nextclade(
-            all_consensus[0], reference, primers, nextclade_dataset)
-        // pangolin
-        pangolin(all_consensus[0])
-        software_versions = software_versions.mix(pangolin.out.version)
-        // telemetry
-        telemetry(
-            artic.trimmed_bam.join(artic.pass_vcf).toList().transpose().toList(),
-            primers,
-            reference)
-        // report
-        html_doc = report(
-            artic.depth_stats.collect(),
-            read_summaries.collect(), 
-            clades.collect(),
-            pangolin.out.report.collect(),
-            genotype_summary.collect(),
-            artic.vcf_stats.collect(),
-            all_consensus[1],
-            software_versions.collect(),
-            workflow_params,
-            all_consensus[0])
-        results = all_consensus[0].concat(
-            telemetry.out.json,
-            all_consensus[1],
-            all_variants[0].flatten(),
-            clades[0],
-            artic.primertrimmed_bam.flatMap { it -> [ it[1], it[2] ] },
-            html_doc[0],
-            html_doc[1],
-            combined_genotype_summary,
-            pangolin.out.report)
+            read_summaries = preArticQC(samples)
+            artic = runArtic(samples, scheme_directory)
+            // collate consensus and variants
+            all_consensus = allConsensus(artic.consensus.collect())
+            all_variants = allVariants(
+                artic.pass_vcf.toList().transpose().toList(), reference)
+            // genotype summary
+            if (params.genotype_variants) {
+                genotype_summary = genotypeSummary(
+                    artic.merged_gvcf.join(artic.primertrimmed_bam), ref_variants)
+                combined_genotype_summary = combineGenotypeSummaries(
+                    genotype_summary.collect())
+            } else {
+                genotype_summary = Channel.fromPath("$projectDir/data/OPTIONAL_FILE")
+            }
+            // nextclade
+            clades = nextclade(
+                all_consensus[0], reference, primers, nextclade_dataset)
+            // pangolin
+            pangolin(all_consensus[0])
+            software_versions = software_versions.mix(pangolin.out.version)
+            // telemetry
+            telemetry(
+                artic.trimmed_bam.join(artic.pass_vcf).toList().transpose().toList(),
+                primers,
+                reference)
+            // report
+            html_doc = report(
+                artic.depth_stats.collect(),
+                read_summaries.collect(), 
+                clades[0].collect(),
+                clades[1].collect(),
+                pangolin.out.report.collect(),
+                genotype_summary.collect(),
+                artic.vcf_stats.collect(),
+                all_consensus[1],
+                software_versions.collect(),
+                workflow_params,
+                all_consensus[0])
+            results = all_consensus[0].concat(
+                telemetry.out.json,
+                all_consensus[1],
+                all_variants[0].flatten(),
+                clades[0],
+                artic.primertrimmed_bam.flatMap { it -> [ it[1], it[2] ] },
+                html_doc[0],
+                html_doc[1],
+                combined_genotype_summary,
+                pangolin.out.report)
+            }
     emit:
         results
 }
