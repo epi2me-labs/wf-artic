@@ -77,9 +77,6 @@ def main():
         "output",
         help="Report output filename")
     parser.add_argument(
-        "--nextclade",
-        help="nextclade json output file")
-    parser.add_argument(
         "--pangolin",
         help="pangolin CSV output file")
     parser.add_argument(
@@ -88,6 +85,12 @@ def main():
     parser.add_argument(
         "--summaries", nargs='+', required=True,
         help="Sequencing summary files")
+    parser.add_argument(
+        "--nextclade",
+        help="nextclade json output file")
+    parser.add_argument(
+        "--nextclade_errors",
+        help="nextclade error csv")
     parser.add_argument(
         "--bcftools_stats", nargs='+', required=True,
         help="Outputs from bcftools stats")
@@ -342,10 +345,18 @@ comparing depth across samples.***
         section = report_doc.add_section(
             section=nextclade.NextClade(args.nextclade))
         section.markdown(
-            "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
-            "may report 'Missing data' QC fails. This is expected and not "
-            "a concern provided the regions of interest are not reported "
-            "as missing.*")
+                "The table shows errors, warnings or failed genes per sample:")
+        error_df = pd.read_csv(args.nextclade_errors).fillna('None')
+        error_df.rename(
+            columns={
+                'seqName': 'Sample Name',
+                'failedGenes': 'failed genes'}, inplace=True)
+        section.table(error_df, index=False)
+        section.markdown(
+                "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
+                "may report 'Missing data' QC fails. This is expected and not "
+                "a concern provided the regions of interest are not reported "
+                "as missing.*")
 
     # Pangolin analysis
     if args.pangolin is not None:

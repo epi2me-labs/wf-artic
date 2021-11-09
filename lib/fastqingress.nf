@@ -1,4 +1,3 @@
-
 process checkSampleSheet {
     label "artic"
     cpus 1
@@ -113,6 +112,12 @@ def resolve_barcode_structure(input_folder, sample_sheet)
                 valid_barcode_dirs << d
             }
         }
+        if (valid_barcode_dirs.size() == 0){
+            error_message = "Error: None of the barcode directories within the parameters given contain .fastq(.gz) files."
+            println(error_message)
+            return error_message
+        
+        }
         if (invalid_barcode_dirs.size() > 0) {
             println(" - Some barcode directories did not contain .fastq(.gz) files:")
             for (d in invalid_barcode_dirs) {
@@ -168,9 +173,9 @@ def fastq_ingress(input_folder, output_folder, samples, sanitize)
     data = resolve_barcode_structure(input_folder, sample_sheet)
     // return error if data empty after processing
     if (data == null) {
-        println("")
-        println("Error: `--fastq` Unable to find FASTQ files or BARCODE folders in the provided --fastq path")
-        exit 1
+        error_message = "Error: `--fastq` Unable to find FASTQ files or BARCODE folders in the provided --fastq path"
+        println(error_message)
+        return error_message
     }
     return data
 }
