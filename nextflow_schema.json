@@ -221,7 +221,7 @@
         },
         "pangolin_version": {
             "type": "string",
-            "default": "3.1.4",
+            "default": "3.1.16",
             "hidden": true
         },
         "_min_len": {
