@@ -41,7 +41,7 @@ MEAN = 'mean'
 MEDIAN = 'median'
 READS = 'reads'
 ABOVE_20X = 'perc_bases_above_20x'
-ABOVE_200X = 'perc_bases_above_200x'
+ABOVE_150X = 'perc_bases_above_150x'
 
 
 def get_reference_name(reference, index):
@@ -70,6 +70,22 @@ def groupby_amplicons(df, ind):
 def get_alignment_tag(alignment, tag):
     """Get SAM tag."""
     return alignment.get_tag(tag)
+
+
+def get_median(arr, default=0):
+    """Get median value of array."""
+    try:
+        return "{:.2f}".format(statistics.median(arr))
+    except statistics.StatisticsError:
+        return default
+
+
+def get_mean(arr, default=0):
+    """Get mean value of array."""
+    try:
+        return "{:.2f}".format(statistics.mean(arr))
+    except statistics.StatisticsError:
+        return default
 
 
 def build_telemetry(
@@ -110,18 +126,14 @@ def build_telemetry(
 
         sample[AMPLICONS] = {}
         for amp_name, primers in grouped_by_amplicon:
+            primers.reset_index(inplace=True)
             sample[AMPLICONS][amp_name] = {}
             amplicon = sample[AMPLICONS][amp_name]
 
-            # Filter out ALT primers
-            no_alt = primers[
-                primers[PRIMER].str.contains('alt').isin([False])]
-            no_alt.reset_index(inplace=True)
-
             # Gather amplicon level data
-            pool = no_alt.at[0, PRIMER_SET]
-            start = no_alt.at[0, START]
-            end = no_alt.at[1, END]
+            pool = primers.at[0, PRIMER_SET]
+            start = primers[START].min()
+            end = primers[END].max()
             length = end - start
 
             # Initialise variables to accumulate
@@ -135,7 +147,7 @@ def build_telemetry(
                 for p in primers[[PRIMER, START, END]].values
             }
             bases_above_20x = 0
-            bases_above_200x = 0
+            bases_above_150x = 0
 
             # Assuming that coverage has not been tampered with upstream
             for base in bam.pileup(
@@ -178,34 +190,30 @@ def build_telemetry(
                 # Calculate additional summary stats
                 if per_base_count > 20:
                     bases_above_20x += 1
-                if per_base_count > 200:
-                    bases_above_200x += 1
+                if per_base_count > 150:
+                    bases_above_150x += 1
 
             # Put all the data together per amplicon
             amplicon[POOL] = int(pool)
 
             amplicon[COVERAGE] = {
                 READS: len(read_ids),
-                MEDIAN: "{:.2f}".format(statistics.median(reads_per_base)),
-                MEAN: "{:.2f}".format(statistics.mean(reads_per_base)),
+                MEDIAN: get_median(reads_per_base),
+                MEAN: get_mean(reads_per_base),
                 ABOVE_20X: "{:.2f}".format(bases_above_20x / length * 100),
-                ABOVE_200X: "{:.2f}".format(bases_above_200x / length * 100)
+                ABOVE_150X: "{:.2f}".format(bases_above_150x / length * 100)
             }
 
             amplicon[PRIMERS] = {
                 k: {
                     COVERAGE: {
                         ACTUAL: {
-                            MEAN: "{:.2f}".format(
-                                statistics.mean(v[ACTUAL])),
-                            MEDIAN: "{:.2f}".format(
-                                statistics.median(v[ACTUAL])),
+                            MEAN: get_mean(v[ACTUAL]),
+                            MEDIAN: get_median(v[ACTUAL]),
                         },
                         OVERLAP: {
-                            MEAN: "{:.2f}".format(
-                                statistics.mean(v[OVERLAP])),
-                            MEDIAN: "{:.2f}".format(
-                                statistics.median(v[OVERLAP])),
+                            MEAN: get_mean(v[OVERLAP]),
+                            MEDIAN: get_median(v[OVERLAP]),
                         },
                     },
                     CALLS: v[CALLS]
