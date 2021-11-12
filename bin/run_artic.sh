@@ -9,6 +9,7 @@ medaka_model=$5
 full_scheme_name=$6
 threads=$7
 max_softclip_length=$8
+normalise=$9
 
 function mock_artic {
     # write an empty VCF
@@ -38,7 +39,7 @@ artic guppyplex --skip-quality-check \
 # the output of the above will be...
 READFILE="${sample_name}_${sample_name}.fastq"
 
-artic minion --medaka --normalise 200 --threads ${threads} \
+artic minion --medaka --normalise ${normalise} --threads ${threads} \
     --read-file ${READFILE} \
     --medaka-model ${medaka_model} \
     --scheme-directory primer_schemes \

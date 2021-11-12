@@ -107,6 +107,10 @@
                     "type": "integer",
                     "description": "Remove reads with alignments showing large softclipping"
                 },
+                "normalise": {
+                    "type": "integer",
+                    "description": "Depth ceiling for depth of coverage normalisation"
+                },
                 "medaka_model": {
                     "type": "string",
                     "default": "r941_prom_variant_g360",
