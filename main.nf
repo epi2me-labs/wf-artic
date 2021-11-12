@@ -85,6 +85,20 @@ process genotypeSummary {
     """
 }
 
+process calculateDepths {
+    // Samtools depth output
+    label "artic"
+    publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
+    cpus 1
+    input:
+        tuple file(directory), val(sample_name)
+        tuple file(bam), file(bam_index)
+    output:
+        file "${sample_name}.depth.tsv"
+    """
+    samtools depth -aa -m 10000 $bam > ${sample_name}.depth.tsv
+    """
+}
 
 process combineGenotypeSummaries {
     label "artic"
@@ -251,7 +265,6 @@ process pangolin {
 process output {
     // publish inputs to output directory
     label "artic"
-
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
     input:
         file fname
@@ -278,6 +291,7 @@ workflow pipeline {
         scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
+        calculateDepths(samples, runArtic.out.bam)
         // collate consensus and variants
         all_consensus = allConsensus(runArtic.out[0].collect())
         tmp = runArtic.out.pass_vcf.toList().transpose().toList() // surely theres another way?
