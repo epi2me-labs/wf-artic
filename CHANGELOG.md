@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v0.3.6]
+
+### Added
+
+- `--normalise` parameter allows specification of depth of coverage ceiling used by `artic minion`. [This was previously fixed at 200](https://github.com/epi2me-labs/wf-artic/issues/15).
+
 ## [v0.3.5]
 
 ### Changed
