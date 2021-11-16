@@ -3,14 +3,16 @@
 
 import argparse
 import json
+from math import log
 import os
 
-from aplanat import annot, bars, hist, lines, report
+from aplanat import annot, bars, hist, lines, points, report
 from aplanat.components import bcfstats, nextclade
 from aplanat.components import simple as scomponents
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
-from bokeh.models import Panel, Range1d, Tabs
+from bokeh.models import ColumnDataSource, FixedTicker, Panel, Range1d, Tabs
+from bokeh.plotting import figure
 import numpy as np
 import pandas as pd
 import pysam
@@ -30,7 +32,7 @@ def output_json(df, consensus_fasta):
     all_json = {}
     for sample in grouped_by_sample.groups.keys():
         group_by_primer = grouped_by_sample.get_group(
-                          sample).groupby('primer_set')
+            sample).groupby('primer_set')
         rg1 = group_by_primer.get_group(1).reset_index()
         rg2 = group_by_primer.get_group(2).reset_index()
         newdf = pd.DataFrame()
@@ -44,7 +46,7 @@ def output_json(df, consensus_fasta):
         newdf['rg2'] = rg2['depth']
         # preserve data type by converting column by column
         final = list(list(x) for x in zip(*(
-                newdf[x].values.tolist() for x in newdf.columns)))
+            newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
     readcounts = {}
@@ -57,12 +59,12 @@ def output_json(df, consensus_fasta):
         for entry in fh:
             all_json[entry.name][-1][1] = len(entry.sequence)
             final_json['data'].append({
-               'barcode': entry.name,
-               'chromosome': entry.comment,
-               'seqlen': len(entry.sequence),
-               'ncount': (entry.sequence).count('N'),
-               'readcount': readcounts[entry.name],
-               'coverage': all_json[entry.name]
+                'barcode': entry.name,
+                'chromosome': entry.comment,
+                'seqlen': len(entry.sequence),
+                'ncount': (entry.sequence).count('N'),
+                'readcount': readcounts[entry.name],
+                'coverage': all_json[entry.name]
             })
     return(final_json)
 
@@ -82,6 +84,9 @@ def main():
     parser.add_argument(
         "--depths", nargs='+', required=True,
         help="Depth summary files")
+    parser.add_argument(
+        "--telemetry",
+        help="Workflow telemetry file")
     parser.add_argument(
         "--summaries", nargs='+', required=True,
         help="Sequencing summary files")
@@ -118,6 +123,9 @@ def main():
         "--hide_variants", action="store_true",
         help="Do not display variant summary in report.")
     parser.add_argument(
+        "--hide_debug", action="store_true",
+        help="Do not display debugging in report.")
+    parser.add_argument(
         "--revision", default='unknown',
         help="git branch/tag of the executed workflow")
     parser.add_argument(
@@ -132,10 +140,138 @@ def main():
     parser.add_argument(
         "--consensus_fasta",
         help="Fasta of all conesusus seqeunces")
+    parser.add_argument(
+        "--samples", nargs='+', default='unknown',
+        help="space separated list of samples")
+    parser.add_argument(
+        "--types", nargs='+', default='unknown',
+        help="space separated list of sample types")
     args = parser.parse_args()
     report_doc = report.WFReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic",
         revision=args.revision, commit=args.commit)
+
+    # Get samples and types into something we can use
+    # Not currently in use but here for future use
+    # sample_types = [{'sample': sample, 'type': type}
+    #       for sample, type in zip(args.samples, args.types)]
+
+    if not args.hide_debug:
+        section = report_doc.add_section()
+        section.markdown('''
+    ### Debugging
+    This section displays additional information useful for debugging
+    ''')
+
+        with open(args.telemetry) as f:
+            d = json.load(f)
+
+            amplicons = []
+            coverages = []
+            names = []
+            colors = list()
+            bad_amplicons = dict()
+
+            for barcode in d['barcodes']:
+                names.append(barcode)
+                colors.append('#0084a9')
+                x = []
+                y = []
+
+                for amplicon in d['barcodes'][barcode]['amplicons']:
+                    amplicon_number = int(amplicon.split("_")[1])
+                    median = float(d['barcodes'][barcode]['amplicons']
+                                   [amplicon]['coverage']['median'])
+                    if median < 20:
+                        if amplicon_number not in bad_amplicons:
+                            bad_amplicons[amplicon_number] = list()
+                        bad_amplicons[amplicon_number].append(barcode)
+                    x.append(int(amplicon_number))
+                    y.append(log(float(median)) if float(median) != 0 else 0)
+
+                amplicons.append(x)
+                coverages.append(y)
+            section.markdown('''
+        #### Batch Pass/Failure
+        This section describes if a batch passes or fails our thresholds.''')
+
+            bad_amplicon_count = 0
+            text = ['<ul>']
+            for amplicon in bad_amplicons:
+                if len(bad_amplicons[amplicon]) > 2:
+                    bad_amplicon_count += 1
+                    text.append(
+                        '<li><strong>Amplicon '+str(amplicon)+':</strong> ' +
+                        str(len(bad_amplicons[amplicon]))+' Samples</li>'
+                    )
+
+            text.append('</ul>')
+
+            # waiting on new aplanat
+            # section.alert(
+            #     title="Amplicons with >2 samples with <20x median coverage",
+            #     text="\n".join(text), level="info")
+
+            section.markdown('''
+        #### Coverage of All Samples Per Amplicon
+        *N.B. This is the downsampled coverage*
+        ''')
+
+            p = points.points(amplicons, coverages, ylim=(-1, 8), xlim=(0, 30),
+                              title="Median Coverage by Amplicon & Sample",
+                              names=names,
+                              colors=colors)
+
+            p.xaxis.ticker = FixedTicker(ticks=list(range(1, 30)))
+            p.xaxis.axis_label = 'Amplicon'
+            p.yaxis.axis_label = 'log(Median Coverage)'
+            p.legend.visible = False
+            section.plot(p)
+
+        section.markdown('''
+    #### Location of Ns in Final Consensus
+    This plot shows the location of Ns in the consensus sequence, useful
+    for seeing the implications of coverage dropouts.
+    ''')
+        barcodes = list()
+        positions = list()
+        values = list()
+
+        with pysam.FastxFile(args.consensus_fasta) as fh:
+            for entry in fh:
+                for count, base in enumerate(entry.sequence):
+                    if base == "N":
+                        barcodes.append(entry.name)
+                        positions.append(count)
+                        values.append(1)
+
+        data = {'barcode': barcodes, 'position': positions, 'value': values}
+
+        df = pd.DataFrame.from_dict(data)
+
+        p = figure(
+            title="Location of Ns in Consensus",
+            tooltips=None,
+            plot_width=1200,
+            plot_height=800,
+            x_range=(0, 30000),
+            y_range=list(df.barcode.drop_duplicates()),
+            toolbar_location="above",
+            x_axis_location="below",
+            y_axis_location="right"
+        )
+
+        p.rect(
+            x="position",
+            y="barcode",
+            width=1,
+            height=1,
+            source=ColumnDataSource(df),
+            line_color=None,
+            fill_color='#0084a9'
+        )
+
+        section.plot(p)
 
     section = report_doc.add_section()
     section.markdown('''
@@ -256,7 +392,8 @@ comparing depth across samples.***
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
         epi2me_json = output_json(df, args.consensus_fasta)
-        json_object = json.dumps(epi2me_json, indent=4, separators=(',', ':'))
+        json_object = json.dumps(epi2me_json, indent=4,
+                                 separators=(',', ':'))
         json_file = open("artic.json", "a")
         json_file.write(json_object)
         json_file.close()
@@ -267,8 +404,8 @@ comparing depth across samples.***
         for sample in sorted(df['sample_name'].unique()):
             bc = df['sample_name'] == sample
             depth = df[bc].groupby('pos').sum().reset_index()
-            depth_thresh = \
-                100*(depth['depth'] >= depth_lim).sum() / len(depth['depth'])
+            depth_thresh = 100*(depth['depth'] >=
+                                depth_lim).sum() / len(depth['depth'])
             depth_mean = depth['depth'].mean()
 
             # total depth plot
@@ -345,7 +482,7 @@ comparing depth across samples.***
         section = report_doc.add_section(
             section=nextclade.NextClade(args.nextclade))
         section.markdown(
-                "The table shows errors, warnings or failed genes per sample:")
+            "The table shows errors, warnings or failed genes per sample:")
         error_df = pd.read_csv(args.nextclade_errors).fillna('None')
         error_df.rename(
             columns={
@@ -353,10 +490,10 @@ comparing depth across samples.***
                 'failedGenes': 'failed genes'}, inplace=True)
         section.table(error_df, index=False)
         section.markdown(
-                "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
-                "may report 'Missing data' QC fails. This is expected and not "
-                "a concern provided the regions of interest are not reported "
-                "as missing.*")
+            "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
+            "may report 'Missing data' QC fails. This is expected and not "
+            "a concern provided the regions of interest are not reported "
+            "as missing.*")
 
     # Pangolin analysis
     if args.pangolin is not None:
