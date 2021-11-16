@@ -164,6 +164,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show / hide variant information in report."
+                },
+                "report_detailed": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show / hide some extra plots for detailed batch analysis."
                 }
             },
             "fa_icon": "fas fa-address-card",

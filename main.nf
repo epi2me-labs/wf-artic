@@ -36,11 +36,11 @@ process preArticQC {
     label "artic"
     cpus 1
     input:
-        tuple file(directory), val(sample_name)
+        tuple file(directory), val(sample_id), val(type)
     output:
-        file "${sample_name}.stats"
+        file "${sample_id}.stats"
     """
-    fastcat -s ${sample_name} -r ${sample_name}.stats -x ${directory} > /dev/null
+    fastcat -s ${sample_id} -r ${sample_id}.stats -x ${directory} > /dev/null
     """
 }
 
@@ -49,38 +49,38 @@ process runArtic {
     label "artic"
     cpus 2
     input:
-        tuple file(directory), val(sample_name)
+        tuple file(directory), val(sample_id), val(type)
         file "primer_schemes"
     output:
-        path "${sample_name}.consensus.fasta", emit: consensus
-        path "${sample_name}.depth.txt", emit: depth_stats
-        path "${sample_name}.pass.named.stats", emit: vcf_stats
+        path "${sample_id}.consensus.fasta", emit: consensus
+        path "${sample_id}.depth.txt", emit: depth_stats
+        path "${sample_id}.pass.named.stats", emit: vcf_stats
         tuple(
-            val(sample_name),
-            path("${sample_name}.pass.named.vcf.gz"),
-            path("${sample_name}.pass.named.vcf.gz.tbi"),
+            val(sample_id),
+            path("${sample_id}.pass.named.vcf.gz"),
+            path("${sample_id}.pass.named.vcf.gz.tbi"),
             emit: pass_vcf)
         tuple(
-            val(sample_name),
-            path("${sample_name}.merged.gvcf.named.vcf.gz"),
-            path("${sample_name}.merged.gvcf.named.vcf.gz.tbi"),
+            val(sample_id),
+            path("${sample_id}.merged.gvcf.named.vcf.gz"),
+            path("${sample_id}.merged.gvcf.named.vcf.gz.tbi"),
             emit: merged_gvcf)
         tuple(
-            val(sample_name),
-            path("${sample_name}.primertrimmed.rg.sorted.bam"),
-            path("${sample_name}.primertrimmed.rg.sorted.bam.bai"),
+            val(sample_id),
+            path("${sample_id}.primertrimmed.rg.sorted.bam"),
+            path("${sample_id}.primertrimmed.rg.sorted.bam.bai"),
             emit: primertrimmed_bam)
         tuple(
-            val(sample_name),
-            path("${sample_name}.trimmed.rg.sorted.bam"),
-            path("${sample_name}.trimmed.rg.sorted.bam.bai"),
+            val(sample_id),
+            path("${sample_id}.trimmed.rg.sorted.bam"),
+            path("${sample_id}.trimmed.rg.sorted.bam.bai"),
             emit: trimmed_bam)
     """
     run_artic.sh \
-        ${sample_name} ${directory} ${params._min_len} ${params._max_len} \
+        ${sample_id} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.full_scheme_name} \
         ${task.cpus} ${params._max_softclip_length}
-    bcftools stats ${sample_name}.pass.named.vcf.gz > ${sample_name}.pass.named.stats 
+    bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats 
     """
 }
 
@@ -90,7 +90,7 @@ process genotypeSummary {
     label "artic"
     cpus 1
     input:
-        tuple val(sample_name), file(vcf), file(tbi), file(bam), file(bam_index)
+        tuple val(sample_id), file(vcf), file(tbi), file(bam), file(bam_index)
         file "reference.vcf"
     output:
         file "*genotype.csv"
@@ -102,7 +102,7 @@ process genotypeSummary {
         -b $bam \
         -v $vcf \
         -d reference.vcf \
-        --sample $sample_name \
+        --sample $sample_id \
         $lab_id \
         $testkit \
         -o ${csvName}.genotype.csv
@@ -158,13 +158,13 @@ process telemetry {
     label "artic"
     cpus 1
     input:
-        tuple val(sample_name), file(bams), file(bais), file(vcfs), file(tbis)
+        tuple val(sample_id), file(bams), file(bais), file(vcfs), file(tbis)
         path scheme_bed
         path reference
     output:
         path "telemetry.json", emit: json
     script:
-        def samples = sample_name.join(' ')
+        def samples = sample_id.join(' ')
     """
     output_telemetry.py \
         telemetry.json \
@@ -193,6 +193,9 @@ process report {
         path "versions/*"
         path "params.json"
         path "consensus_fasta"
+        path "telemetry.json"
+        val samples
+        val types
     output:
         path "wf-artic-*.html"
         path "*.json"
@@ -204,13 +207,14 @@ process report {
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
+    def debug = params.report_detailed as Boolean ? "--telemetry telemetry.json" : "--hide_debug"
     """
     echo "$pangolin"
     echo "$nextclade"
     report.py \
         consensus_status.txt $report_name \
         $pangolin $coverage $var_summary \
-        $nextclade \
+        $nextclade $debug \
         --nextclade_errors $nextclade_errors \
         --revision $workflow.revision \
         --commit $workflow.commitId \
@@ -222,7 +226,9 @@ process report {
         --bcftools_stats vcf_stats/* $genotype \
         --versions versions \
         --params params.json \
-        --consensus_fasta $consensus_fasta
+        --consensus_fasta $consensus_fasta \
+        --samples $samples \
+        --types $types
     """
 }
 
@@ -271,7 +277,7 @@ process allVariants {
     label "artic"
     cpus 1
     input:
-        tuple val(sample_name), file(vcfs), file(tbis)
+        tuple val(sample_id), file(vcfs), file(tbis)
         file reference
     output:
         tuple file("all_variants.vcf.gz"), file("all_variants.vcf.gz.tbi")
@@ -377,6 +383,7 @@ workflow pipeline {
             read_summaries = preArticQC(samples)
             artic = runArtic(samples, scheme_directory)
             // collate consensus and variants
+            artic.consensus.view()
             all_consensus = allConsensus(artic.consensus.collect())
             all_variants = allVariants(
                 artic.pass_vcf.toList().transpose().toList(), reference)
@@ -396,11 +403,12 @@ workflow pipeline {
             pangolin(all_consensus[0])
             software_versions = software_versions.mix(pangolin.out.version)
             // telemetry
-            telemetry(
+            telemetry_output = telemetry(
                 artic.trimmed_bam.join(artic.pass_vcf).toList().transpose().toList(),
                 primers,
                 reference)
             // report
+            
             html_doc = report(
                 artic.depth_stats.collect(),
                 read_summaries.collect(), 
@@ -412,7 +420,13 @@ workflow pipeline {
                 all_consensus[1],
                 software_versions.collect(),
                 workflow_params,
-                all_consensus[0])
+                all_consensus[0],
+                telemetry_output,
+                // sample_ids
+                samples.map{ it -> it[1]}.toList().map{ it.join(' ')},
+                // sample types
+                samples.map{ it -> it[2]}.toList().map{ it.join(' ')}
+                )
             results = all_consensus[0].concat(
                 telemetry.out.json,
                 all_consensus[1],
@@ -517,6 +531,7 @@ workflow {
     // check fastq dataset and run workflow
     samples = fastq_ingress(
         params.fastq, workDir, params.samples, params.sanitize_fastq)
+
     results = pipeline(samples, scheme_directory, reference, 
         primers, ref_variants, nextclade_dataset)
     output(results)
