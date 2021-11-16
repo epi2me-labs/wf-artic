@@ -91,12 +91,11 @@ process calculateDepths {
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
     cpus 1
     input:
-        tuple file(directory), val(sample_name)
         tuple file(bam), file(bam_index)
     output:
-        file "${sample_name}.depth.tsv"
+        file "${bam.simpleName}.depth.tsv"
     """
-    samtools depth -aa -m 10000 $bam > ${sample_name}.depth.tsv
+    samtools depth -aa -m 10000 ${bam} > ${bam.simpleName}.depth.tsv
     """
 }
 
@@ -291,7 +290,7 @@ workflow pipeline {
         scheme_directory = copySchemeDir(scheme_directory)
         read_summaries = preArticQC(samples)
         runArtic(samples, scheme_directory)
-        calculateDepths(samples, runArtic.out.bam)
+        calculateDepths(runArtic.out.bam)
         // collate consensus and variants
         all_consensus = allConsensus(runArtic.out[0].collect())
         tmp = runArtic.out.pass_vcf.toList().transpose().toList() // surely theres another way?
