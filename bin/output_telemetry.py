@@ -177,15 +177,18 @@ def build_telemetry(
                         primer[OVERLAP].append(per_base_count_alt)
 
                         # Cheekily grab calls from overlaps whilst we're at it
-                        for call in vcf.fetch(
-                                reference_name, base.pos-1, base.pos):
-                            primer[CALLS].append({
-                                POS: call.pos,
-                                QUAL: call.qual,
-                                REF: call.ref,
-                                ALT: call.alts,
-                                POOL: call.info.get('Pool')
-                            })
+                        try:
+                            for call in vcf.fetch(
+                                    reference_name, base.pos-1, base.pos):
+                                primer[CALLS].append({
+                                    POS: call.pos,
+                                    QUAL: call.qual,
+                                    REF: call.ref,
+                                    ALT: call.alts,
+                                    POOL: call.info.get('Pool')
+                                })
+                        except ValueError:
+                            pass
 
                 # Calculate additional summary stats
                 if per_base_count > 20:
