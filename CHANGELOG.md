@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error report if no data at all.
 - Telemetry JSON.
 - Nextclade errors output as seperate table.
-- `--report_debug` flag to show additional coverage plots
+- `--report_detailed` flag to show additional coverage plots
 - Parsing of sample sheet to include a `type` column
 ### Changes
 - `sample_name` changed to `sample_id` throughout
