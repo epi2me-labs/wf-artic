@@ -8,5 +8,5 @@ dependencies:
     - aplanat =0.5.4
     - fastcat =0.3.6
     - bioconda::nextclade =1.3.0
-    - np-artic =1.3.0=py_8
+    - np-artic =1.3.0=py_9
     - pomoxis =0.3.6
