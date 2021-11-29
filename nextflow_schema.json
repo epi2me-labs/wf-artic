@@ -124,8 +124,7 @@
                         "r941_prom_sup_variant_g507",
                         "r941_prom_variant_g303",
                         "r941_prom_variant_g322",
-                        "r941_prom_variant_g360",
-                        "r941_prom_hac_variant_g507"
+                        "r941_prom_variant_g360"
                     ],
                     "help_text": "The correct medaka model to use is determined by the Guppy basecaller version, see [Medaka Models](https://github.com/nanoporetech/medaka#models) for more information."
                 }
