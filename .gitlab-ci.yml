@@ -7,6 +7,11 @@ variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/sars-samples-demultiplexed/ --samples test_data/sample_sheet"
 
 
+aws-run:
+    script:
+        - echo "AWS Batch run disabled"
+
+
 # pangolin to dockerhub, we don't expect to change this often so a simple manual build
 # reminder: update AUX_IMAGE_TAG if the aux container package versions are changed
 release-pangolin:
