@@ -1,6 +1,6 @@
 ARG BASEIMAGE=ontresearch/base-workflow-image:v0.1.0
 FROM $BASEIMAGE
-ARG ENVFILE=environment.yaml
+ARG ENVFILE=environment_pangolin.yaml
 
 COPY $ENVFILE $HOME/environment.yaml
 RUN \

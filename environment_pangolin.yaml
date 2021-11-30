@@ -5,4 +5,5 @@ channels:
     - defaults
 dependencies:
     # reminder: update AUX_IMAGE_TAG if the package versions are changed
-    - pangolin==3.1.4
+    - pangolin==3.1.16
+    - git

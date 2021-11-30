@@ -15,4 +15,4 @@ release-pangolin:
         AUX_IMAGE_NAME: "pangolin"
         AUX_IMAGE_ENVFILE: "environment_pangolin.yaml"
         AUX_IMAGE_DOCKERFILE: "Dockerfile_pangolin"
-        AUX_IMAGE_TAG: "3.1.4"
+        AUX_IMAGE_TAG: "3.1.16"
