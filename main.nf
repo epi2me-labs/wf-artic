@@ -334,7 +334,16 @@ process pangolin {
         path "lineage_report.csv", emit: report
         path "pangolin.version", emit: version
     """
-    pangolin --update
+    # Check to see if the box running the workflow has internet connectivity
+    EXIT_CODE=0
+    wget -q --spider --timeout 10 http://nanoporetech.com || EXIT_CODE=\$?
+
+    if [ \${EXIT_CODE} -eq 0 ]; then
+        pangolin --update
+    else
+        echo "Offline"
+    fi
+    
     pangolin --all-versions 2>&1 | sed 's/: /,/' > pangolin.version
     pangolin consensus.fasta
     """
