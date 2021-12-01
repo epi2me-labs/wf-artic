@@ -79,7 +79,7 @@ process runArtic {
     run_artic.sh \
         ${sample_id} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.full_scheme_name} \
-        ${task.cpus} ${params._max_softclip_length}
+        ${task.cpus} ${params._max_softclip_length} ${params.normalise}
     bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats 
     """
 }
