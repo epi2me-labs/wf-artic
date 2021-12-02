@@ -220,12 +220,12 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.8",
+            "default": "v0.3.9",
             "hidden": true
         },
         "pangolin_version": {
             "type": "string",
-            "default": "3.1.16",
+            "default": "3.1.16-0.3.9",
             "hidden": true
         },
         "_min_len": {
