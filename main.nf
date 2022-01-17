@@ -433,6 +433,7 @@ workflow pipeline {
                 all_variants[0].flatten(),
                 clades[0],
                 artic.primertrimmed_bam.flatMap { it -> [ it[1], it[2] ] },
+                artic.pass_vcf.flatMap { it -> [ it[1], it[2] ] },
                 html_doc[0],
                 html_doc[1],
                 combined_genotype_summary,
