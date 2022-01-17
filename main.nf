@@ -447,7 +447,7 @@ workflow pipeline {
 WorkflowMain.initialise(workflow, params, log)
 
 valid_schemes = ["SARS-CoV-2", "spike-seq"]
-valid_scheme_versions = ["V1", "V2", "V3", "V4", "V4.1", "V1200"]
+valid_scheme_versions = ["V1", "V2", "V3", "V4", "V4.1", "V1200", "VNEB-VarSkip-v1a", "VNEB-VarSkip-v1a-long", "VNEB-VarSkip-v2"]
 
 if (params.scheme_name == "spike-seq") {
     valid_scheme_versions = ["V1", "V4.1"]
@@ -472,7 +472,7 @@ workflow {
 
     if (!params.min_len) {
         params.remove('min_len')
-        if (params.scheme_version == "V1200") {
+        if (params.scheme_version == "V1200" || params.scheme_version == 'VNEB-VarSkip-v1a-long') {
             params._min_len = 150
         } else {
             params._min_len = 400
@@ -483,7 +483,7 @@ workflow {
     }
     if (!params.max_len) {
         params.remove('max_len')
-        if (params.scheme_version == "V1200") {
+        if (params.scheme_version == "V1200" || params.scheme_version == 'VNEB-VarSkip-v1a-long') {
             params._max_len = 1200
         } else {
             params._max_len = 700
