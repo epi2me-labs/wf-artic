@@ -75,6 +75,7 @@
       { "geneName": "ORF7a", "codon": 93 },
       { "geneName": "ORF7a", "codon": 94 },
       { "geneName": "ORF7a", "codon": 120 },
+      { "geneName": "ORF7b", "codon": 2 },
       { "geneName": "ORF7b", "codon": 32 },
       { "geneName": "ORF7b", "codon": 38 },
       { "geneName": "ORF8", "codon": 17 },

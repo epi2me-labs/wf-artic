@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 - `--samples` now changed to `--sample` and `--sample_sheet` introduced
 - Schema updated to allow integration with epi2me services
+- Added ARTIC V4.1 and NEB VarSkip primer sets
+- Updated Nextclade data to 2022-01-05T19:54:31Z
+- Updated Nextclade to v1.8.0
+- Updated pangolin to v3.1.17
 
 ## [v0.3.9]
 ### Changes

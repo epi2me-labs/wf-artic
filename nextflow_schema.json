@@ -71,7 +71,10 @@
                         "V3",
                         "V4",
                         "V4.1",
-                        "V1200"
+                        "V1200",
+                        "VNEB-VarSkip-v1a",
+                        "VNEB-VarSkip-v1a-long",
+                        "VNEB-VarSkip-v2"
                     ]
                 }
             }
