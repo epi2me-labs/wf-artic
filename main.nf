@@ -80,7 +80,7 @@ process runArtic {
         ${sample_id} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.full_scheme_name} \
         ${task.cpus} ${params._max_softclip_length}
-    bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats 
+    bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats
     """
 }
 
@@ -290,7 +290,7 @@ process allVariants {
     if [[ \$(ls norm.*.vcf.gz | wc -l) == "1" ]]; then
         mv norm.*.vcf.gz all_variants.vcf.gz
         mv norm.*.vcf.gz.tbi all_variants.vcf.gz.tbi
-    else 
+    else
         bcftools merge -o all_variants.vcf.gz -O z norm.*.vcf.gz
         bcftools index -t all_variants.vcf.gz
     fi
@@ -408,10 +408,10 @@ workflow pipeline {
                 primers,
                 reference)
             // report
-            
+
             html_doc = report(
                 artic.depth_stats.collect(),
-                read_summaries.collect(), 
+                read_summaries.collect(),
                 clades[0].collect(),
                 clades[1].collect(),
                 pangolin.out.report.collect(),
@@ -481,7 +481,7 @@ workflow {
         params._min_len = params.min_len
         params.remove('min_len')
     }
-    if (!params.max_len) { 
+    if (!params.max_len) {
         params.remove('max_len')
         if (params.scheme_version == "V1200") {
             params._max_len = 1200
@@ -514,7 +514,7 @@ workflow {
     primers = file(
         "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
         type:'file', checkIfExists:true)
-    
+
     // check genotype variants
     if (params.genotype_variants) {
         if (params.genotype_variants == true) {
@@ -530,9 +530,9 @@ workflow {
 
     // check fastq dataset and run workflow
     samples = fastq_ingress(
-        params.fastq, workDir, params.samples, params.sanitize_fastq)
+        params.fastq, workDir, params.sample, params.sample_sheet, params.sanitize_fastq)
 
-    results = pipeline(samples, scheme_directory, reference, 
+    results = pipeline(samples, scheme_directory, reference,
         primers, ref_variants, nextclade_dataset)
     output(results)
 }
