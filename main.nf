@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
 import groovy.json.JsonBuilder
+import java.text.SimpleDateFormat
 nextflow.enable.dsl = 2
 
 include { fastq_ingress } from './lib/fastqingress'
@@ -134,7 +135,6 @@ process getVersions {
     minimap2 --version | sed 's/^/minimap2,/' >> versions.txt
     bcftools --version | head -n 1 | sed 's/ /,/' >> versions.txt
     samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
-    nextclade --version | sed 's/^/nextclade,/' >> versions.txt
     artic --version | sed 's/ /,/' >> versions.txt
     """
 }
@@ -297,28 +297,67 @@ process allVariants {
     """
 }
 
+process prep_nextclade {
+  label 'artic'
+  cpus 1
+  input:
+      file "reference.fasta"
+      file scheme_bed
+  output:
+      file "primers.csv"
+  """
+  scheme_to_nextclade.py $scheme_bed reference.fasta primers.csv
+  """
+}
 
 process nextclade {
-    label "artic"
+    label "nextclade"
     cpus 1
     input:
         file "consensus.fasta"
         file "reference.fasta"
         file scheme_bed
-        file "nextclade_dataset"
+        file "primers.csv"
+        path nextclade_dataset
+        val nextclade_data_tag
     output:
         file "nextclade.json"
         file "*.errors.csv"
+        path "nextclade.version", emit: version
+
+    script:
+
+      update_tag = ''
+
+      // if update_data is true then we will update nextflow on the fly and
+      // use that data instead - regardless of profile - this is the SAFEST
+      if (params.update_data == true) {
+        nextclade_dataset = 'data/sars-cov-2'
+        // if the user specifies a tag and update data then that tag will be pulled
+        // if not then the latest will be pulled
+        if (params.nextclade_data_tag != null) {
+          update_tag = '--tag ' + params.nextclade_data_tag
+        } else {
+          update_tag = '--tag latest'
+        }
+      }
+
     """
-    cp -L reference.fasta ref.fasta
-    scheme_to_nextclade.py $scheme_bed ref.fasta primers.csv
+    if [ "$params.update_data" == "true" ]
+    then
+      nextclade dataset get --name 'sars-cov-2' --output-dir 'data/sars-cov-2' $update_tag
+    fi
+
+    nextclade --version | sed 's/^/nextclade,/' > nextclade.version
+    echo "nextclade_data_tag,`cat $nextclade_dataset/tag.json  | grep -Po '"tag": *\\K"[^"]*"' | sed 's/\\"//g'`" >> nextclade.version
+
     nextclade run \
         --input-fasta consensus.fasta \
-        --reference nextclade_dataset/reference.fasta \
+        --reference $nextclade_dataset/reference.fasta \
         --input-pcr-primers primers.csv \
-        --input-tree nextclade_dataset/tree.json \
-        --input-qc-config nextclade_dataset/qc.json \
-        --input-gene-map nextclade_dataset/genemap.gff \
+        --input-tree $nextclade_dataset/tree.json \
+        --input-qc-config $nextclade_dataset/qc.json \
+        --input-gene-map $nextclade_dataset/genemap.gff \
         --output-json nextclade.json \
         --jobs 1
     """
@@ -334,6 +373,11 @@ process pangolin {
         path "lineage_report.csv", emit: report
         path "pangolin.version", emit: version
     """
+    if [ "$params.update_data" == "true" ]
+    then
+      pangolin --update
+    fi
+
     pangolin --all-versions 2>&1 | sed 's/: /,/' > pangolin.version
     pangolin consensus.fasta
     """
@@ -367,6 +411,7 @@ workflow pipeline {
         primers
         ref_variants
         nextclade_dataset
+        nextclade_data_tag
     main:
         software_versions = getVersions()
         workflow_params = getParams()
@@ -398,10 +443,10 @@ workflow pipeline {
             }
             // nextclade
             clades = nextclade(
-                all_consensus[0], reference, primers, nextclade_dataset)
+                all_consensus[0], reference, primers, prep_nextclade(reference,primers), nextclade_dataset, nextclade_data_tag)
             // pangolin
             pangolin(all_consensus[0])
-            software_versions = software_versions.mix(pangolin.out.version)
+            software_versions = software_versions.mix(pangolin.out.version,nextclade.out.version)
             // telemetry
             telemetry_output = telemetry(
                 artic.trimmed_bam.join(artic.pass_vcf).toList().transpose().toList(),
@@ -502,25 +547,44 @@ workflow {
         params.remove('max_softclip_length')
     }
 
+
     params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
 
-    schemes = projectDir + '/data/primer_schemes'
-    scheme_directory = file(schemes, type: 'dir', checkIfExists:true)
-    nextclade = projectDir + '/data/nextclade/'
-    nextclade_dataset = file(nextclade, type: 'dir', checkIfExists:true)
+    scheme_root = file(projectDir.resolve("./data/primer_schemes"))
+    scheme_directory = file(scheme_root.resolve(params.full_scheme_name), type: 'dir', checkIfExists:true)
 
     reference = file(
-        "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.reference.fasta",
-        type:'file', checkIfExists:true)
+       scheme_directory.resolve("${params.scheme_name}.reference.fasta"),
+       type:'file', checkIfExists:true)
+
     primers = file(
-        "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.scheme.bed",
-        type:'file', checkIfExists:true)
+       scheme_directory.resolve("${params.scheme_name}.scheme.bed"),
+       type:'file', checkIfExists:true)
+
+
+    // For nextclade choose the most recent data from the nextclade_data git submodule, or if nexclade_data_tag is set in params use that
+    // if the user specifies --nextcalde_data_tag and --update_data - that tag will be pulled a fresh and used
+
+    nextclade_data_tag = params.nextclade_data_tag
+
+    if (nextclade_data_tag == null) {
+
+      tagged_dirs = file(projectDir.resolve("./data/nextclade/datasets/sars-cov-2/references/MN908947/versions/*"), type: 'dir', maxdepth: 1)
+      def tag_list = []
+      date_parse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+      tagged_dirs.each { val -> tag_list << date_parse.parse(val.getBaseName()) }
+      nextclade_data_tag = Collections.max(tag_list).format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+    }
+
+    nextclade = projectDir.resolve('./data/nextclade/datasets/sars-cov-2/references/MN908947/versions/').resolve(nextclade_data_tag).resolve('./files')
+    nextclade_dataset = file(nextclade, type: 'dir', checkIfExists:true)
 
     // check genotype variants
     if (params.genotype_variants) {
         if (params.genotype_variants == true) {
             ref_variants = file(
-                "${scheme_directory}/${params.full_scheme_name}/${params.scheme_name}.vcf",
+                scheme_directory.resolve("${params.scheme_name}.vcf"),
                 type:'file', checkIfExists:true)
         } else {
             ref_variants = file(params.genotype_variants, type:'file', checkIfExists:true)
@@ -533,7 +597,7 @@ workflow {
     samples = fastq_ingress(
         params.fastq, workDir, params.sample, params.sample_sheet, params.sanitize_fastq)
 
-    results = pipeline(samples, scheme_directory, reference,
-        primers, ref_variants, nextclade_dataset)
+    results = pipeline(samples, scheme_root, reference,
+        primers, ref_variants, nextclade_dataset, nextclade_data_tag)
     output(results)
 }

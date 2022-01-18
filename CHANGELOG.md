@@ -8,11 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 - `--samples` now changed to `--sample` and `--sample_sheet` introduced
 - Schema updated to allow integration with epi2me services
-- Added ARTIC V4.1 and NEB VarSkip primer sets
+- Added ARTIC V4.1 primer set
+- Added NEB VarSkip primer sets
 - Updated Nextclade data to 2022-01-05T19:54:31Z
 - Updated Nextclade to v1.8.0
 - Updated pangolin to v3.1.17
-- Now outputs all sample VCFs as well as merged vcf
+- Now outputs all sample VCFs as well as merged VCF
+- Pangolin and Nextclade versions can be specified at runtime `--pangolin_version` and `--nextclade_version`
+- Pangolin and Nextclade data can be updated at runtime with `--update_data`
+- All Nextclade data versions included in repo for user selection with `--nextclade_data_tag`, most recent will be used by default
 
 ## [v0.3.9]
 ### Changes
