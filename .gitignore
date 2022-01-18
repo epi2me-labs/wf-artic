@@ -4,3 +4,4 @@ template-workflow
 .*.swp
 .*.swo
 bin/__pycache__
+.DS_Store

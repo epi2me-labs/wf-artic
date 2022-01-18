@@ -1,9 +1,0 @@
-name: epi2melabs-pangolin
-channels:
-    - bioconda
-    - conda-forge
-    - defaults
-dependencies:
-    # reminder: update AUX_IMAGE_TAG if the package versions are changed
-    - pangolin==3.1.17
-    - git

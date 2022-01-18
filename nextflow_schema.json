@@ -236,7 +236,17 @@
         },
         "pangolin_version": {
             "type": "string",
-            "default": "3.1.16-0.3.9",
+            "default": "3.1.17",
+            "hidden": true
+        },
+        "nextclade_version": {
+            "type": "string",
+            "default": "1.8.0",
+            "hidden": true
+        },
+        "nextclade_data_tag": {
+            "type": "string",
+            "default": "2022-01-04T16:00:00Z",
             "hidden": true
         },
         "_min_len": {
