@@ -529,8 +529,10 @@ workflow {
     }
     if (!params.max_len) {
         params.remove('max_len')
-        if (params.scheme_version == "V1200" || params.scheme_version == 'VNEB-VarSkip-v1a-long') {
+        if (params.scheme_version == "V1200") {
             params._max_len = 1200
+        } else if (params.scheme_version == 'VNEB-VarSkip-v1a-long') {
+            params._max_len = 1800
         } else {
             params._max_len = 700
         }
