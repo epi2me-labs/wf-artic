@@ -141,7 +141,7 @@ process getVersions {
 
 
 process getParams {
-    label "wfplasmid"
+    label "artic"
     cpus 1
     output:
         path "params.json"
