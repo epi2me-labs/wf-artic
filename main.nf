@@ -506,8 +506,8 @@ workflow {
         exit 1
     }
 
-    if (params.samples && params.detect_samples) {
-        println("Select either `--samples` or `--detect_samples`, not both")
+    if (params.sample && params.detect_samples) {
+        println("Select either `--sample` or `--detect_samples`, not both")
         exit 1
     }
 
