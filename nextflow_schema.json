@@ -21,7 +21,7 @@
                     "type": "string",
                     "format": "path",
                     "description": "A fastq file or directory containing fastq input files or directories of input files.",
-                    "help_text": "If directories named \\\"barcode*\\\" are found under the `--fastq` directory the data is assumed to be multiplex and each barcode directory will be processed independently. If `.fastq(.gz)` files are found under the `--fastq` directory the sample is assumed to not be multiplexed. In this second case `--samples` should be a simple name rather than a CSV file."
+                    "help_text": "If directories named \\\"barcode*\\\" are found under the `--fastq` directory the data is assumed to be multiplex and each barcode directory will be processed independently. If `.fastq(.gz)` files are found under the `--fastq` directory the sample is assumed to not be multiplexed. In this second case `--sample` should be a simple name rather than a CSV file."
                 },
                 "sample": {
                     "type": "string",
@@ -117,6 +117,25 @@
                 "max_softclip_length": {
                     "type": "integer",
                     "description": "Remove reads with alignments showing large softclipping"
+                },
+                "update_data": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Update pangoin & Nextclade data at runtime."
+                },
+                "pangolin_version": {
+                    "type": "string",
+                    "default": "3.1.17",
+                    "hidden": false
+                },
+                "nextclade_version": {
+                    "type": "string",
+                    "default": "1.8.0",
+                    "hidden": false
+                },
+                "nextclade_data_tag": {
+                    "type": "string",
+                    "hidden": false
                 },
                 "normalise": {
                     "type": "integer",
@@ -237,21 +256,6 @@
         "wfversion": {
             "type": "string",
             "default": "v0.3.10",
-            "hidden": true
-        },
-        "pangolin_version": {
-            "type": "string",
-            "default": "3.1.17",
-            "hidden": true
-        },
-        "nextclade_version": {
-            "type": "string",
-            "default": "1.8.0",
-            "hidden": true
-        },
-        "nextclade_data_tag": {
-            "type": "string",
-            "default": "2022-01-04T16:00:00Z",
             "hidden": true
         },
         "_min_len": {

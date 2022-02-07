@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalise no longer hardcoded
 ### Fixed
 - Nextclade execution options changed as suggested in https://github.com/epi2me-labs/wf-artic/issues/35
+- Fixing `--samples` in schema
 
 
 ## [v0.3.10]
