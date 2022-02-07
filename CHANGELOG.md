@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 ### Changes
+- Nextclade data is now checked for compatibility with Nextclade version
 - Normalise no longer hardcoded
+### Fixed
+- Nextclade execution options changed as suggested in https://github.com/epi2me-labs/wf-artic/issues/35
+
 
 ## [v0.3.10]
 ### Changes

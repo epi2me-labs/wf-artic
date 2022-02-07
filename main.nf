@@ -1,11 +1,10 @@
 #!/usr/bin/env nextflow
 
 import groovy.json.JsonBuilder
-import java.text.SimpleDateFormat
 nextflow.enable.dsl = 2
 
 include { fastq_ingress } from './lib/fastqingress'
-
+include { nextcladeVersionChecker } from './lib/nextclade'
 
 process checkSampleSheet {
     label "artic"
@@ -318,7 +317,7 @@ process nextclade {
         file "reference.fasta"
         file scheme_bed
         file "primers.csv"
-        path nextclade_dataset
+        val nextclade_dataset
         val nextclade_data_tag
     output:
         file "nextclade.json"
@@ -328,7 +327,6 @@ process nextclade {
     script:
 
       update_tag = ''
-
       // if update_data is true then we will update nextflow on the fly and
       // use that data instead - regardless of profile - this is the SAFEST
       if (params.update_data == true) {
@@ -353,11 +351,8 @@ process nextclade {
 
     nextclade run \
         --input-fasta consensus.fasta \
-        --reference $nextclade_dataset/reference.fasta \
         --input-pcr-primers primers.csv \
-        --input-tree $nextclade_dataset/tree.json \
-        --input-qc-config $nextclade_dataset/qc.json \
-        --input-gene-map $nextclade_dataset/genemap.gff \
+        --input-dataset $nextclade_dataset \
         --output-json nextclade.json \
         --jobs 1
     """
@@ -568,19 +563,9 @@ workflow {
     // if the user specifies --nextcalde_data_tag and --update_data - that tag will be pulled a fresh and used
 
     nextclade_data_tag = params.nextclade_data_tag
+    // get the compatible data tag
+    (nextclade_data_tag,nextclade_dataset) = nextcladeVersionChecker(nextclade_data_tag)
 
-    if (nextclade_data_tag == null) {
-
-      tagged_dirs = file(projectDir.resolve("./data/nextclade/datasets/sars-cov-2/references/MN908947/versions/*"), type: 'dir', maxdepth: 1)
-      def tag_list = []
-      date_parse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-      tagged_dirs.each { val -> tag_list << date_parse.parse(val.getBaseName()) }
-      nextclade_data_tag = Collections.max(tag_list).format("yyyy-MM-dd'T'HH:mm:ss'Z'")
-
-    }
-
-    nextclade = projectDir.resolve('./data/nextclade/datasets/sars-cov-2/references/MN908947/versions/').resolve(nextclade_data_tag).resolve('./files')
-    nextclade_dataset = file(nextclade, type: 'dir', checkIfExists:true)
 
     // check genotype variants
     if (params.genotype_variants) {
