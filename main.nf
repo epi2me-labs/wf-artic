@@ -317,7 +317,7 @@ process nextclade {
         file "reference.fasta"
         file scheme_bed
         file "primers.csv"
-        val nextclade_dataset
+        path nextclade_dataset
         val nextclade_data_tag
     output:
         file "nextclade.json"
