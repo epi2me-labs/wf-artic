@@ -8,7 +8,7 @@ RUN \
     . $CONDA_DIR/etc/profile.d/mamba.sh \
     && micromamba activate \
     && micromamba install --file $HOME/environment.yaml \
-    && micromamba install -c bioconda pangolin=$PANGOLIN_IMAGE_TAG \
+    && micromamba install -c bioconda -c defaults -c conda-forge pangolin=$PANGOLIN_IMAGE_TAG \
     && fix-permissions $CONDA_DIR \
     && fix-permissions $HOME
 
