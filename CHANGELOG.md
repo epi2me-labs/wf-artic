@@ -4,16 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [v0.3.11]
 ### Changes
 - Nextclade data is now checked for compatibility with Nextclade version
 - Normalise no longer hardcoded
+- Nextclade bump to 1.10.2
+- Nextclade data to 2022-02-07T12:00:00Z
+- Pangolin bump to 3.1.20
 ### Fixed
 - Pangolin build fix
 - NEB VarSkip V2 bed file now corrected
 - Nextclade execution options changed as suggested in https://github.com/epi2me-labs/wf-artic/issues/35
 - Fixing `--samples` in schema
-
 
 ## [v0.3.10]
 ### Changes

@@ -125,12 +125,12 @@
                 },
                 "pangolin_version": {
                     "type": "string",
-                    "default": "3.1.17",
+                    "default": "3.1.20",
                     "hidden": false
                 },
                 "nextclade_version": {
                     "type": "string",
-                    "default": "1.8.0",
+                    "default": "1.10.2",
                     "hidden": false
                 },
                 "nextclade_data_tag": {
@@ -255,7 +255,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.10",
+            "default": "v0.3.11",
             "hidden": true
         },
         "_min_len": {
