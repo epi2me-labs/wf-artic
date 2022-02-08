@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.2.0",
+  "privateMutations": {
+    "enabled": true,
+    "typical": 8,
+    "cutoff": 24,
+    "weightLabeledSubstitutions": 4,
+    "weightReversionSubstitutions": 6,
+    "weightUnlabeledSubstitutions": 1
+  },
+  "missingData": {
+    "enabled": true,
+    "missingDataThreshold": 2700,
+    "scoreBias": 300
+  },
+  "snpClusters": {
+    "enabled": true,
+    "windowSize": 100,
+    "clusterCutOff": 6,
+    "scoreWeight": 50
+  },
+  "mixedSites": {
+    "enabled": true,
+    "mixedSitesThreshold": 10
+  },
+  "frameShifts": {
+    "enabled": true,
+    "ignoredFrameShifts": [
+      { "geneName": "ORF3a", "codonRange": {"begin": 256, "end": 276 } },
+      { "geneName": "ORF3a", "codonRange": {"begin": 258, "end": 276 } },
+      { "geneName": "ORF6", "codonRange": {"begin": 21, "end": 62 } },
+      { "geneName": "ORF6", "codonRange": {"begin": 29, "end": 62 } },
+      { "geneName": "ORF6", "codonRange": {"begin": 30, "end": 62 } },
+      { "geneName": "ORF6", "codonRange": {"begin": 37, "end": 62 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 53, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 61, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 62, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 63, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 64, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 65, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 68, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 71, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 74, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 75, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 76, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 77, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 78, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 80, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 81, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 82, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 84, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 100, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 101, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 102, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 103, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 109, "end": 122 } },
+      { "geneName": "ORF7a", "codonRange": {"begin": 116, "end": 122 } },
+      { "geneName": "ORF7b", "codonRange": {"begin": 41, "end": 44 } },
+      { "geneName": "ORF7b", "codonRange": {"begin": 42, "end": 44 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 45, "end": 122 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 67, "end": 122 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 107, "end": 122 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 118, "end": 120 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 119, "end": 122 } },
+      { "geneName": "ORF8", "codonRange": {"begin": 120, "end": 122 } }
+    ]
+  },
+  "stopCodons": {
+    "enabled": true,
+    "ignoredStopCodons": [
+      { "geneName": "ORF3a", "codon": 253 },
+      { "geneName": "ORF7a", "codon": 37 },
+      { "geneName": "ORF7a", "codon": 40 },
+      { "geneName": "ORF7a", "codon": 61 },
+      { "geneName": "ORF7a", "codon": 75 },
+      { "geneName": "ORF7a", "codon": 76 },
+      { "geneName": "ORF7a", "codon": 89 },
+      { "geneName": "ORF7a", "codon": 93 },
+      { "geneName": "ORF7a", "codon": 94 },
+      { "geneName": "ORF7a", "codon": 120 },
+      { "geneName": "ORF7b", "codon": 2 },
+      { "geneName": "ORF7b", "codon": 32 },
+      { "geneName": "ORF7b", "codon": 38 },
+      { "geneName": "ORF8", "codon": 17 },
+      { "geneName": "ORF8", "codon": 18 },
+      { "geneName": "ORF8", "codon": 26 },
+      { "geneName": "ORF8", "codon": 58 },
+      { "geneName": "ORF8", "codon": 63 },
+      { "geneName": "ORF8", "codon": 67 },
+      { "geneName": "ORF8", "codon": 105 },
+      { "geneName": "ORF8", "codon": 109 }
+    ]
+  }
+}
