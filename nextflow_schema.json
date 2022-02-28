@@ -130,7 +130,7 @@
                 },
                 "nextclade_version": {
                     "type": "string",
-                    "default": "1.10.2",
+                    "default": "1.10.3",
                     "hidden": false
                 },
                 "nextclade_data_tag": {
