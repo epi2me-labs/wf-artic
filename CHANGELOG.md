@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 - Updated medaka default model to `r941_min_hac_variant_g507`
 - Nextclade bumped to 1.10.3
+- Help text for sample sheets updated as suggested in https://github.com/epi2me-labs/wf-artic/issues/41
 
 ## [v0.3.11]
 ### Changes
