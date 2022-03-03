@@ -30,7 +30,7 @@
                 "sample_sheet": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "CSV file with columns named `barcode`, `sample_name` and `type`. Permissible if passing a directory containing barcodeXX sub-directories."
+                    "description": "CSV file with columns named `barcode`, `sample_id` and `type`. Permissible if passing a directory containing barcodeXX sub-directories."
                 },
                 "genotype_variants": {
                     "type": "string",
