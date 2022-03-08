@@ -156,6 +156,15 @@ def main():
     # sample_types = [{'sample': sample, 'type': type}
     #       for sample, type in zip(args.samples, args.types)]
 
+    section = report_doc.add_section()
+    section.markdown('''
+    N.B. The versions of pangolin and nextclade are indicated in the footer of
+     this report. Because of the fast moving nature of the pandemic these
+     versions may not be the most recent, but we check daily for new versions.
+     More details are provided
+     [here](https://labs.epi2me.io/sarscov2-midnight-analysis).
+    ''')
+
     if not args.hide_debug:
         section = report_doc.add_section()
         section.markdown('''
@@ -217,10 +226,11 @@ def main():
         *N.B. This is the downsampled coverage*
         ''')
 
-            p = points.points(amplicons, coverages, ylim=(-1, 8), xlim=(0, 30),
-                              title="Median Coverage by Amplicon & Sample",
-                              names=names,
-                              colors=colors)
+            p = points.points(
+                amplicons, coverages, ylim=(-1, 8), xlim=(0, 30),
+                title="Median Coverage by Amplicon & Sample",
+                names=names,
+                colors=colors)
 
             p.xaxis.ticker = FixedTicker(ticks=list(range(1, 30)))
             p.xaxis.axis_label = 'Amplicon'
@@ -392,8 +402,7 @@ comparing depth across samples.***
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
         epi2me_json = output_json(df, args.consensus_fasta)
-        json_object = json.dumps(epi2me_json, indent=4,
-                                 separators=(',', ':'))
+        json_object = json.dumps(epi2me_json, indent=4, separators=(',', ':'))
         json_file = open("artic.json", "a")
         json_file.write(json_object)
         json_file.close()
@@ -404,8 +413,8 @@ comparing depth across samples.***
         for sample in sorted(df['sample_name'].unique()):
             bc = df['sample_name'] == sample
             depth = df[bc].groupby('pos').sum().reset_index()
-            depth_thresh = 100*(depth['depth'] >=
-                                depth_lim).sum() / len(depth['depth'])
+            depth_thresh = 100*(
+                depth['depth'] >= depth_lim).sum() / len(depth['depth'])
             depth_mean = depth['depth'].mean()
 
             # total depth plot
