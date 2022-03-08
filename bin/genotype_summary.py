@@ -115,8 +115,9 @@ def get_results(vcf_file, variants_file, bam_file):
     return results
 
 
-def compile_table(results, sample, lab_id, timestamp, testkit,
-                  valid_coverage=20, valid_quality=20):
+def compile_table(
+        results, sample, lab_id, timestamp, testkit,
+        valid_coverage=20, valid_quality=20):
     """Compile the .csv output from the variant calling results."""
     table_data = []
     for entry in results:
@@ -223,8 +224,9 @@ def main():
         sample = args.vcf.split('.')[0]
 
     results = get_results(args.vcf, args.variants, args.bam)
-    table = compile_table(results, sample, args.lab_id,
-                          args.timestamp, args.testkit)
+    table = compile_table(
+        results, sample, args.lab_id,
+        args.timestamp, args.testkit)
 
     table.to_csv(args.outfile, index=False, na_rep='n/a')
 

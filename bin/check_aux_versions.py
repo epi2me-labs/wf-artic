@@ -120,13 +120,12 @@ def docker_newest_tag(image, prefix=None, client=None, proxies=None):
         client = docker.from_env()
 
     tags = get_image_tags(image, proxies=proxies)
+    sorted_tags = sorted(
+        tags, reverse=True, key=functools.cmp_to_key(semver.compare)
+    )
     all_tags = [
-            '{}{}'.format('' if prefix is None else prefix, x) for x in
-            sorted(
-                tags, reverse=True,
-                key=functools.cmp_to_key(semver.compare)
-            )
-        ]
+        '{}{}'.format('' if prefix is None else prefix, x) for x in sorted_tags
+    ]
 
     if len(all_tags) > 0:
         return all_tags[0]
@@ -145,14 +144,12 @@ def github_newest_tag(repository, prefix=None, token=None):
             {'name': tag.name} for tag in g.get_repo(repository).get_tags()
         ]
     tags = process_tags(tags_data, prefix)
-
+    sorted_t = sorted(
+        tags, reverse=True, key=functools.cmp_to_key(semver.compare)
+    )
     all_tags = [
-            '{}{}'.format('' if prefix is None else prefix, x) for x in
-            sorted(
-                tags, reverse=True,
-                key=functools.cmp_to_key(semver.compare)
-            )
-        ]
+        '{}{}'.format('' if prefix is None else prefix, x) for x in sorted_t
+    ]
 
     if len(all_tags) > 0:
         return all_tags[0]
@@ -177,14 +174,11 @@ def conda_newest_tag(repository, prefix=None):
             tags_data.append({'name': name})
 
     tags = process_tags(tags_data, prefix)
-
+    sorted_t = sorted(
+        tags, reverse=True, key=functools.cmp_to_key(semver.compare))
     all_tags = [
-            '{}{}'.format('' if prefix is None else prefix, x) for x in
-            sorted(
-                tags, reverse=True,
-                key=functools.cmp_to_key(semver.compare)
-            )
-        ]
+        '{}{}'.format('' if prefix is None else prefix, x) for x in sorted_t
+    ]
 
     if len(all_tags) > 0:
         return all_tags[0]
@@ -197,20 +191,30 @@ def main():
     parser = argparse.ArgumentParser(
         description='''Get latest tags''')
 
-    parser.add_argument('-t', '--token', required=True, dest="token",
-                        help="GitHub Access Token")
+    parser.add_argument(
+        '-t', '--token', required=True, dest="token",
+        help="GitHub Access Token"
+    )
 
-    parser.add_argument('-d', '--docker_registry', required=True,
-                        dest="docker_registry", help="Docker registry")
+    parser.add_argument(
+        '-d', '--docker_registry', required=True,
+        dest="docker_registry", help="Docker registry"
+    )
 
-    parser.add_argument('-g', '--github_repository', required=True,
-                        dest="github_repository", help="GitHub repository")
+    parser.add_argument(
+        '-g', '--github_repository', required=True,
+        dest="github_repository", help="GitHub repository"
+    )
 
-    parser.add_argument('-o', '--tool', required=True,
-                        dest="tool", help="Tool")
+    parser.add_argument(
+        '-o', '--tool', required=True,
+        dest="tool", help="Tool"
+    )
 
-    parser.add_argument('-p', '--prefix', required=False,
-                        dest="prefix", default=None)
+    parser.add_argument(
+        '-p', '--prefix', required=False,
+        dest="prefix", default=None
+    )
 
     args = parser.parse_args()
 
