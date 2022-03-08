@@ -85,6 +85,22 @@ process runArtic {
 }
 
 
+process combineDepth {
+  label "artic"
+  cpus 1
+  input:
+    path "depth_stats/*"
+  output:
+    file "all_depth.txt"
+  script:
+  """
+    header_file=`ls depth_stats/* | head -1`
+    head -1 \${header_file} > all_depth.txt
+    cat depth_stats/* | grep -v depth_fwd >> all_depth.txt
+  """
+}
+
+
 process genotypeSummary {
     // Produce a genotype summary spreadsheet
     label "artic"
@@ -422,6 +438,7 @@ workflow pipeline {
         } else {
             read_summaries = preArticQC(samples)
             artic = runArtic(samples, scheme_directory)
+            all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
             artic.consensus.view()
             all_consensus = allConsensus(artic.consensus.collect())
@@ -477,7 +494,8 @@ workflow pipeline {
                 html_doc[0],
                 html_doc[1],
                 combined_genotype_summary,
-                pangolin.out.report)
+                pangolin.out.report,
+                all_depth)
             }
     emit:
         results
