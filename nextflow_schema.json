@@ -55,27 +55,12 @@
                 "scheme_name": {
                     "type": "string",
                     "default": "SARS-CoV-2",
-                    "description": "Scheme name.",
-                    "enum": [
-                        "SARS-CoV-2",
-                        "spike-seq"
-                    ]
+                    "description": "Scheme name."
                 },
                 "scheme_version": {
                     "type": "string",
                     "default": "V3",
-                    "description": "Scheme version.",
-                    "enum": [
-                        "V1",
-                        "V2",
-                        "V3",
-                        "V4",
-                        "V4.1",
-                        "V1200",
-                        "VNEB-VarSkip-v1a",
-                        "VNEB-VarSkip-v1a-long",
-                        "VNEB-VarSkip-v2"
-                    ]
+                    "description": "Scheme version."
                 }
             }
         },
@@ -255,7 +240,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.12",
+            "default": "v0.3.13",
             "hidden": true
         },
         "_min_len": {
@@ -284,5 +269,9 @@
         "show_hidden_params": {
             "type": "boolean"
         }
+    },
+    "docs": {
+        "intro": "## Introduction\n",
+        "links": "## Useful links\n\n* [medaka](https://www.github.com/nanoporetech/medaka)\n* [artic](https://github.com/artic-network/fieldbioinformatics)\n* [nextflow](https://www.nextflow.io/)\n* [docker](https://www.docker.com/products/docker-desktop)\n* [conda](https://docs.conda.io/en/latest/miniconda.html)\n"
     }
 }

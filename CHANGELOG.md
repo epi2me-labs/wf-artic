@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Changes
+- Updated primer schemes
+- Removed scheme downloading from np-artic
+- V1200 Midnight naming changed:
+  - v1 of the kit (MRT.001.10) is called Midnight-ONT/V1
+  - v2 of the kit (MRT.001.20) is called Midnight-ONT/V2
+  - v3 of the kit (MRT.001.30) is called Midnight-ONT/V3
+    - It should be noted that primer 21_RIGHT only has one record in the bed, to represent
+      the maximum possible region covered by the right primers for this amplicon
+
 ## [v0.3.12]
 ### Changes
 - Updated medaka default model to `r941_min_hac_variant_g507`

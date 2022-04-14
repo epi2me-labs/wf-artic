@@ -6,10 +6,12 @@ directory=$2
 min_len=$3
 max_len=$4
 medaka_model=$5
-full_scheme_name=$6
-threads=$7
-max_softclip_length=$8
-normalise=$9
+scheme_name=$6
+scheme_dir=$7
+scheme_version=$8
+threads=$9
+max_softclip_length=${10}
+normalise=${11}
 
 function mock_artic {
     # write an empty VCF
@@ -42,9 +44,10 @@ READFILE="${sample_name}_${sample_name}.fastq"
 artic minion --medaka --normalise ${normalise} --threads ${threads} \
     --read-file ${READFILE} \
     --medaka-model ${medaka_model} \
-    --scheme-directory primer_schemes \
+    --scheme-directory ${scheme_dir}/${scheme_name} \
+    --scheme-version ${scheme_version} \
     --max-softclip-length ${max_softclip_length} \
-    ${full_scheme_name} ${sample_name} \
+    ${scheme_name} ${sample_name} \
     || mock_artic
 
 for vcf_set in "pass" "merged.gvcf"; do
