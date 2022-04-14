@@ -78,8 +78,8 @@ process runArtic {
     """
     run_artic.sh \
         ${sample_id} ${directory} ${params._min_len} ${params._max_len} \
-        ${params.medaka_model} ${params.full_scheme_name} \
-        ${task.cpus} ${params._max_softclip_length} ${params.normalise}
+        ${params.medaka_model} ${params.scheme_name} ${params.scheme_dir} \
+        ${params.scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
     bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats
     """
 }
@@ -417,7 +417,10 @@ process output {
 workflow pipeline {
     take:
         samples
-        scheme_directory
+        // scheme_directory
+        scheme_dir
+        scheme_name
+        scheme_version
         reference
         primers
         ref_variants
@@ -427,7 +430,7 @@ workflow pipeline {
         software_versions = getVersions()
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
-        scheme_directory = copySchemeDir(scheme_directory)
+        scheme_directory = copySchemeDir(projectDir.resolve("./data/${scheme_dir}"))
         if ((samples.getClass() == String) && (samples.startsWith("Error"))){
             samples = channel.of(samples)
             html_doc = report_no_data(
@@ -505,12 +508,39 @@ workflow pipeline {
 // entrypoint workflow
 WorkflowMain.initialise(workflow, params, log)
 
-valid_schemes = ["SARS-CoV-2", "spike-seq"]
-valid_scheme_versions = ["V1", "V2", "V3", "V4", "V4.1", "V1200", "VNEB-VarSkip-v1a", "VNEB-VarSkip-v1a-long", "VNEB-VarSkip-v2"]
+// here we should check if the scheme exists, if not, list schemes and exit
 
-if (params.scheme_name == "spike-seq") {
-    valid_scheme_versions = ["V1", "V4.1"]
+schemes = file(projectDir.resolve("./data/primer_schemes/**bed"), type: 'file', maxdepth: 10)
+
+c_green = params.monochrome_logs ? '' : "\033[0;32m";
+c_reset = params.monochrome_logs ? '' : "\033[0m";
+c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+
+valid_scheme_versions = []
+
+log.info """
+ ------------------------------------
+ Available Schemes:
+ ------------------------------------
+"""
+log.info """  Name\t\tVersion"""
+for (scheme in schemes){
+  main = scheme.toString().split("primer_schemes/")[1]
+  name = main.split("/")[0]
+  version = """${main.split("/")[1]}/${main.split("/")[2]}"""
+  valid_scheme_versions.add(version)
+  selected = ""
+  if (params.scheme_version == version && params.scheme_name == name){
+    selected = "selected"
+  }
+  log.info """${c_green}  ${name}\t${version}\t${c_reset}${selected}"""
 }
+
+log.info """
+ ------------------------------------
+"""
+
+
 
 workflow {
 
@@ -531,7 +561,7 @@ workflow {
 
     if (!params.min_len) {
         params.remove('min_len')
-        if (params.scheme_version == "V1200" || params.scheme_version == 'VNEB-VarSkip-v1a-long') {
+        if (params.scheme_version.startsWith("Midnight") || params.scheme_version == 'NEB-VarSkip/v1a-long') {
             params._min_len = 150
         } else {
             params._min_len = 400
@@ -542,9 +572,9 @@ workflow {
     }
     if (!params.max_len) {
         params.remove('max_len')
-        if (params.scheme_version == "V1200") {
+        if (params.scheme_version.startsWith("Midnight")) {
             params._max_len = 1200
-        } else if (params.scheme_version == 'VNEB-VarSkip-v1a-long') {
+        } else if (params.scheme_version == 'NEB-VarSkip/v1a-long') {
             params._max_len = 1800
         } else {
             params._max_len = 700
@@ -563,18 +593,30 @@ workflow {
     }
 
 
-    params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
+    // params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
+    //
+    // params.root_scheme_name = file(params.scheme_name, type: 'dir').parent.name
+    // println(params.root_scheme_name)
+    // scheme_root = file(projectDir.resolve("./data/primer_schemes"))
+    // println(scheme_root)
+    // println(params.full_scheme_name)
+    // scheme_directory = file(scheme_root.resolve(params.full_scheme_name), type: 'dir', checkIfExists:true)
 
-    scheme_root = file(projectDir.resolve("./data/primer_schemes"))
-    scheme_directory = file(scheme_root.resolve(params.full_scheme_name), type: 'dir', checkIfExists:true)
 
-    reference = file(
-       scheme_directory.resolve("${params.scheme_name}.reference.fasta"),
-       type:'file', checkIfExists:true)
+    primers_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
+    primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
 
-    primers = file(
-       scheme_directory.resolve("${params.scheme_name}.scheme.bed"),
-       type:'file', checkIfExists:true)
+    reference_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
+    reference = file(projectDir.resolve(reference_path),type:'file', checkIfExists:true)
+
+
+    // reference = file(
+    //    scheme_directory.resolve("${params.root_scheme_name}.reference.fasta"),
+    //    type:'file', checkIfExists:true)
+    //
+    // primers = file(
+    //    scheme_directory.resolve("${params.root_scheme_name}.scheme.bed"),
+    //    type:'file', checkIfExists:true)
 
 
     // For nextclade choose the most recent data from the nextclade_data git submodule, or if nexclade_data_tag is set in params use that
@@ -602,7 +644,7 @@ workflow {
     samples = fastq_ingress(
         params.fastq, workDir, params.sample, params.sample_sheet, params.sanitize_fastq)
 
-    results = pipeline(samples, scheme_root, reference,
+    results = pipeline(samples, params.scheme_dir, params.scheme_name, params.scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
     output(results)
 }

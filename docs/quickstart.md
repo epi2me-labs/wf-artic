@@ -1,9 +1,3 @@
-# ARTIC SARS-CoV-2 Workflow
-
-This repository contains a [nextflow](https://www.nextflow.io/) workflow for
-running the ARTIC SARS-CoV-2 workflow on multiplexed MinION, GridION, and
-PromethION runs.
-## Introduction
 ## Quickstart
 
 The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
@@ -36,10 +30,3 @@ The primary outputs of the workflow include:
 * a [FASTA](https://en.wikipedia.org/wiki/FASTA) file containing the consensus sequence for all samples,
 * a [VCF](https://en.wikipedia.org/wiki/Variant_Call_Format) file sample all samples,
 * an HTML report document detailing QC metrics and the primary findings of the workflow.
-## Useful links
-
-* [medaka](https://www.github.com/nanoporetech/medaka)
-* [artic](https://github.com/artic-network/fieldbioinformatics)
-* [nextflow](https://www.nextflow.io/)
-* [docker](https://www.docker.com/products/docker-desktop)
-* [conda](https://docs.conda.io/en/latest/miniconda.html)
