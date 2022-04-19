@@ -61,6 +61,10 @@
                     "type": "string",
                     "default": "V3",
                     "description": "Scheme version."
+                },
+                "custom_scheme": {
+                    "type": "string",
+                    "description": "Path to custom scheme."
                 }
             }
         },
@@ -91,6 +95,11 @@
             "description": "Data filtering and algorithm options",
             "default": "",
             "properties": {
+                "list_schemes": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "List primer schemes and exit without running analysis."
+                },
                 "min_len": {
                     "type": "number",
                     "description": "Minimum read length (default: set by scheme)."

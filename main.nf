@@ -510,79 +510,118 @@ WorkflowMain.initialise(workflow, params, log)
 
 // here we should check if the scheme exists, if not, list schemes and exit
 
-schemes = file(projectDir.resolve("./data/primer_schemes/**bed"), type: 'file', maxdepth: 10)
-
-c_green = params.monochrome_logs ? '' : "\033[0;32m";
-c_reset = params.monochrome_logs ? '' : "\033[0m";
-c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
-
-valid_scheme_versions = []
-
-log.info """
- ------------------------------------
- Available Schemes:
- ------------------------------------
-"""
-log.info """  Name\t\tVersion"""
-for (scheme in schemes){
-  main = scheme.toString().split("primer_schemes/")[1]
-  name = main.split("/")[0]
-  version = """${main.split("/")[1]}/${main.split("/")[2]}"""
-  valid_scheme_versions.add(version)
-  selected = ""
-  if (params.scheme_version == version && params.scheme_name == name){
-    selected = "selected"
-  }
-  log.info """${c_green}  ${name}\t${version}\t${c_reset}${selected}"""
-}
-
-log.info """
- ------------------------------------
-"""
 
 
 
 workflow {
 
-    if (!valid_scheme_versions.any { it == params.scheme_version}) {
-        println("`--scheme_version` should be one of: $valid_scheme_versions, for `--scheme_name`: $params.scheme_name")
-        exit 1
-    }
 
-    if (params.scheme_name == "spike-seq" && !params.genotype_variants) {
-        println("`--genotype_variants` is required for scheme: 'spike-seq'")
-        exit 1
-    }
+    if (!params.custom_scheme){
 
-    if (params.sample && params.detect_samples) {
-        println("Select either `--sample` or `--detect_samples`, not both")
-        exit 1
-    }
+      c_green = params.monochrome_logs ? '' : "\033[0;32m";
+      c_reset = params.monochrome_logs ? '' : "\033[0m";
+      c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+      c_purple = params.monochrome_logs ? '' : "\033[0;35m";
 
-    if (!params.min_len) {
-        params.remove('min_len')
-        if (params.scheme_version.startsWith("Midnight") || params.scheme_version == 'NEB-VarSkip/v1a-long') {
-            params._min_len = 150
-        } else {
-            params._min_len = 400
-        }
+      schemes = file(projectDir.resolve("./data/primer_schemes/**bed"), type: 'file', maxdepth: 10)
+
+      valid_scheme_versions = []
+
+      log.info """
+      ------------------------------------
+      Available Primer Schemes:
+      ------------------------------------
+      """
+      log.info """  Name\t\tVersion"""
+      for (scheme in schemes){
+        main = scheme.toString().split("primer_schemes/")[1]
+        name = main.split("/")[0]
+        version = """${main.split("/")[1]}/${main.split("/")[2]}"""
+        valid_scheme_versions.add(version)
+        log.info """${c_green}  ${name}\t${version}\t${c_reset}"""
+      }
+
+      log.info """
+      ------------------------------------
+      """
+
+      if (params.list_schemes) {
+        exit 1
+      }
+
+
+
+      if (!valid_scheme_versions.any { it == params.scheme_version}) {
+          println("`--scheme_version` should be one of: $valid_scheme_versions, for `--scheme_name`: $params.scheme_name")
+          exit 1
+      }
+
+      if (params.scheme_name == "spike-seq" && !params.genotype_variants) {
+          println("`--genotype_variants` is required for scheme: 'spike-seq'")
+          exit 1
+      }
+
+      if (params.sample && params.detect_samples) {
+          println("Select either `--sample` or `--detect_samples`, not both")
+          exit 1
+      }
+
+      if (!params.min_len) {
+          params.remove('min_len')
+          if (params.scheme_version.startsWith("Midnight") || params.scheme_version == 'NEB-VarSkip/v1a-long') {
+              params._min_len = 150
+          } else {
+              params._min_len = 400
+          }
+      } else {
+          params._min_len = params.min_len
+          params.remove('min_len')
+      }
+      if (!params.max_len) {
+          params.remove('max_len')
+          if (params.scheme_version.startsWith("Midnight")) {
+              params._max_len = 1200
+          } else if (params.scheme_version == 'NEB-VarSkip/v1a-long') {
+              params._max_len = 1800
+          } else {
+              params._max_len = 700
+          }
+      } else {
+          params._max_len = params.max_len
+          params.remove('max_len')
+      }
+
+      primers_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
+      primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
+
+      reference_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
+      reference = file(projectDir.resolve(reference_path),type:'file', checkIfExists:true)
+
     } else {
-        params._min_len = params.min_len
-        params.remove('min_len')
+      //custom scheme path defined
+      log.info """${c_purple}Custom primer scheme selected: ${params.custom_scheme} (WARNING: We do not validate your scheme - use at your own risk!)${c_reset}"""
+      //check path for required files
+      primers = file("""${params.custom_scheme}/${params.scheme_name}.scheme.bed""", type:'file', checkIfExists:true)
+      reference = file("""${params.custom_scheme}/${params.scheme_name}.reference.fasta""", type:'file', checkIfExists:true)
+
+
+      // check to make sure min and max length have been set
+
+      if (!params.max_len || !params.min_len) {
+          log.info """${c_purple}EXITING: --min_len and --max_len parameters must be specified when using custom schemes.${c_reset}"""
+          exit 1
+      }
+
+      params._max_len = params.max_len
+      params.remove('max_len')
+
+
+      params._min_len = params.min_len
+      params.remove('min_len')
+
+
     }
-    if (!params.max_len) {
-        params.remove('max_len')
-        if (params.scheme_version.startsWith("Midnight")) {
-            params._max_len = 1200
-        } else if (params.scheme_version == 'NEB-VarSkip/v1a-long') {
-            params._max_len = 1800
-        } else {
-            params._max_len = 700
-        }
-    } else {
-        params._max_len = params.max_len
-        params.remove('max_len')
-    }
+
     if (!params.max_softclip_length) {
         params.remove('max_softclip_length')
         params._max_softclip_length = 0
@@ -592,31 +631,6 @@ workflow {
         params.remove('max_softclip_length')
     }
 
-
-    // params.full_scheme_name = params.scheme_name + "/" + params.scheme_version
-    //
-    // params.root_scheme_name = file(params.scheme_name, type: 'dir').parent.name
-    // println(params.root_scheme_name)
-    // scheme_root = file(projectDir.resolve("./data/primer_schemes"))
-    // println(scheme_root)
-    // println(params.full_scheme_name)
-    // scheme_directory = file(scheme_root.resolve(params.full_scheme_name), type: 'dir', checkIfExists:true)
-
-
-    primers_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
-    primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
-
-    reference_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
-    reference = file(projectDir.resolve(reference_path),type:'file', checkIfExists:true)
-
-
-    // reference = file(
-    //    scheme_directory.resolve("${params.root_scheme_name}.reference.fasta"),
-    //    type:'file', checkIfExists:true)
-    //
-    // primers = file(
-    //    scheme_directory.resolve("${params.root_scheme_name}.scheme.bed"),
-    //    type:'file', checkIfExists:true)
 
 
     // For nextclade choose the most recent data from the nextclade_data git submodule, or if nexclade_data_tag is set in params use that
