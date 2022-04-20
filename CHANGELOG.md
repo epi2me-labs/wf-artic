@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - v3 of the kit (MRT.001.30) is called Midnight-ONT/V3
     - It should be noted that primer 21_RIGHT only has one record in the bed, to represent
       the maximum possible region covered by the right primers for this amplicon
+- pangolin bumped to 4.0.5
+- nextclade bumped to 1.11.0
 ### Added
 - Ability to specify custom primers with --custom_scheme
   - --min_len and --max_len must be specified when using this option

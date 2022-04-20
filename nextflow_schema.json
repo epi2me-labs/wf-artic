@@ -119,12 +119,12 @@
                 },
                 "pangolin_version": {
                     "type": "string",
-                    "default": "3.1.20",
+                    "default": "4.0.5",
                     "hidden": false
                 },
                 "nextclade_version": {
                     "type": "string",
-                    "default": "1.10.3",
+                    "default": "1.11.0",
                     "hidden": false
                 },
                 "nextclade_data_tag": {
