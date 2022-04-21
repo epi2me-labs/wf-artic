@@ -515,13 +515,12 @@ WorkflowMain.initialise(workflow, params, log)
 
 workflow {
 
+    c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
 
     if (!params.custom_scheme){
-
-      c_green = params.monochrome_logs ? '' : "\033[0;32m";
-      c_reset = params.monochrome_logs ? '' : "\033[0m";
-      c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
-      c_purple = params.monochrome_logs ? '' : "\033[0;35m";
 
       schemes = file(projectDir.resolve("./data/primer_schemes/**bed"), type: 'file', maxdepth: 10)
 
