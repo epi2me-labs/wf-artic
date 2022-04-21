@@ -249,7 +249,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.13",
+            "default": "v0.3.14",
             "hidden": true
         },
         "_min_len": {
