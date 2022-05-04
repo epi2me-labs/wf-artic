@@ -59,7 +59,7 @@
                 },
                 "scheme_version": {
                     "type": "string",
-                    "default": "V3",
+                    "default": "ARTIC/V3",
                     "description": "Scheme version."
                 },
                 "custom_scheme": {
@@ -249,7 +249,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.14",
+            "default": "v0.3.15",
             "hidden": true
         },
         "_min_len": {
