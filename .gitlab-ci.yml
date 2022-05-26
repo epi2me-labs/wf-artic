@@ -3,7 +3,7 @@ include:
       file: "wf-containers.yaml"
 
 variables:
-    NF_WORKFLOW_OPTS: "--fastq test_data/sars-samples-demultiplexed/ --samples test_data/sample_sheet"
+    NF_WORKFLOW_OPTS: "--fastq test_data/fastq --samples test_data/sample_sheet.csv"
     IMAGE_TAG: "NO_UPDATE"
 
 check-versions:
