@@ -122,6 +122,11 @@
                     "default": "4.0.5",
                     "hidden": false
                 },
+                "pangolin_options": {
+                    "type": "string",
+                    "hidden": true,
+                    "description": "Pass optoins to pangolin, use like this \"--analysis-mode fast --min-length 26000\"."
+                },
                 "nextclade_version": {
                     "type": "string",
                     "default": "1.11.0",

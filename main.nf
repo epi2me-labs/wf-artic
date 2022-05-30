@@ -390,7 +390,7 @@ process pangolin {
     fi
 
     pangolin --all-versions 2>&1 | sed 's/: /,/' > pangolin.version
-    pangolin consensus.fasta
+    pangolin $params._pangolin_options consensus.fasta
     """
 }
 
@@ -630,6 +630,14 @@ workflow {
         params.remove('max_softclip_length')
     }
 
+    // Pangolin options
+      if (params.pangolin_options == null){
+        params.remove('pangolin_options')
+        params._pangolin_options = ''
+      } else {
+        params._pangolin_options = params.pangolin_options
+        params.remove('pangolin_options')
+      }
 
 
     // For nextclade choose the most recent data from the nextclade_data git submodule, or if nexclade_data_tag is set in params use that
