@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Added
 - `--pangolin_options` command line arg, use with quotes i.e.: "--analysis-mode fast"
-- NEB VarSkip V2b
+- NEB VarSkip V2b primer scheme added
 ### Changes
 - Better help text on cli
 
