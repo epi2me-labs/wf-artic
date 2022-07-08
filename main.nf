@@ -662,8 +662,12 @@ workflow {
     }
 
     // check fastq dataset and run workflow
-    samples = fastq_ingress(
-        params.fastq, workDir, params.sample, params.sample_sheet, params.sanitize_fastq)
+    samples = fastq_ingress([
+        "input":params.fastq,
+        "sample":params.sample,
+        "sample_sheet":params.sample_sheet,
+        "sanitize": params.sanitize_fastq,
+        "output":params.out_dir])
 
     results = pipeline(samples, params.scheme_dir, params.scheme_name, params.scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)

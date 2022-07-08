@@ -4,6 +4,7 @@ include:
 
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/fastq --samples test_data/sample_sheet.csv"
+    NF_IGNORE_PROCESSES: "checkSampleSheet,combineGenotypeSummaries,genotypeSummary,report_no_data"
     IMAGE_TAG: "NO_UPDATE"
 
 check-versions:
