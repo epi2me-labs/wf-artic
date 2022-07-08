@@ -15,6 +15,7 @@
                 "out_dir": {
                     "type": "string",
                     "default": "output",
+                    "format": "path",
                     "description": "Directory for output of all user-facing files."
                 },
                 "fastq": {
@@ -254,7 +255,7 @@
         },
         "wfversion": {
             "type": "string",
-            "default": "v0.3.16",
+            "default": "v0.3.17",
             "hidden": true
         },
         "_min_len": {
