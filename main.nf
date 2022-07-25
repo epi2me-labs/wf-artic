@@ -36,11 +36,11 @@ process preArticQC {
     label "artic"
     cpus 1
     input:
-        tuple file(directory), val(sample_id), val(type)
+        tuple file(directory), val(meta)
     output:
-        file "${sample_id}.stats"
+        file "${meta.sample_id}.stats"
     """
-    fastcat -s ${sample_id} -r ${sample_id}.stats -x ${directory} > /dev/null
+    fastcat -s ${meta.sample_id} -r ${meta.sample_id}.stats -x ${directory} > /dev/null
     """
 }
 
@@ -49,38 +49,38 @@ process runArtic {
     label "artic"
     cpus 2
     input:
-        tuple file(directory), val(sample_id), val(type)
+        tuple file(directory), val(meta)
         file "primer_schemes"
     output:
-        path "${sample_id}.consensus.fasta", emit: consensus
-        path "${sample_id}.depth.txt", emit: depth_stats
-        path "${sample_id}.pass.named.stats", emit: vcf_stats
+        path "${meta.sample_id}.consensus.fasta", emit: consensus
+        path "${meta.sample_id}.depth.txt", emit: depth_stats
+        path "${meta.sample_id}.pass.named.stats", emit: vcf_stats
         tuple(
-            val(sample_id),
-            path("${sample_id}.pass.named.vcf.gz"),
-            path("${sample_id}.pass.named.vcf.gz.tbi"),
+            val(meta.sample_id),
+            path("${meta.sample_id}.pass.named.vcf.gz"),
+            path("${meta.sample_id}.pass.named.vcf.gz.tbi"),
             emit: pass_vcf)
         tuple(
-            val(sample_id),
-            path("${sample_id}.merged.gvcf.named.vcf.gz"),
-            path("${sample_id}.merged.gvcf.named.vcf.gz.tbi"),
+            val(meta.sample_id),
+            path("${meta.sample_id}.merged.gvcf.named.vcf.gz"),
+            path("${meta.sample_id}.merged.gvcf.named.vcf.gz.tbi"),
             emit: merged_gvcf)
         tuple(
-            val(sample_id),
-            path("${sample_id}.primertrimmed.rg.sorted.bam"),
-            path("${sample_id}.primertrimmed.rg.sorted.bam.bai"),
+            val(meta.sample_id),
+            path("${meta.sample_id}.primertrimmed.rg.sorted.bam"),
+            path("${meta.sample_id}.primertrimmed.rg.sorted.bam.bai"),
             emit: primertrimmed_bam)
         tuple(
-            val(sample_id),
-            path("${sample_id}.trimmed.rg.sorted.bam"),
-            path("${sample_id}.trimmed.rg.sorted.bam.bai"),
+            val(meta.sample_id),
+            path("${meta.sample_id}.trimmed.rg.sorted.bam"),
+            path("${meta.sample_id}.trimmed.rg.sorted.bam.bai"),
             emit: trimmed_bam)
     """
     run_artic.sh \
-        ${sample_id} ${directory} ${params._min_len} ${params._max_len} \
+        ${meta.sample_id} ${directory} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params.scheme_name} ${params.scheme_dir} \
         ${params.scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
-    bcftools stats ${sample_id}.pass.named.vcf.gz > ${sample_id}.pass.named.stats
+    bcftools stats ${meta.sample_id}.pass.named.vcf.gz > ${meta.sample_id}.pass.named.stats
     """
 }
 
@@ -483,9 +483,9 @@ workflow pipeline {
                 all_consensus[0],
                 telemetry_output,
                 // sample_ids
-                samples.map{ it -> it[1]}.toList().map{ it.join(' ')},
+                samples.map{ it -> it[1].sample_id}.toList().map{ it.join(' ')},
                 // sample types
-                samples.map{ it -> it[2]}.toList().map{ it.join(' ')}
+                samples.map{ it -> it[1].type}.toList().map{ it.join(' ')}
                 )
             results = all_consensus[0].concat(
                 telemetry.out.json,

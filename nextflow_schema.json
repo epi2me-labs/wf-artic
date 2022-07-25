@@ -66,6 +66,11 @@
                 "custom_scheme": {
                     "type": "string",
                     "description": "Path to custom scheme."
+                },
+                "scheme_dir": {
+                    "type": "string",
+                    "description": "Path to primer scheme.",
+                    "default": "primer_schemes"
                 }
             }
         },
@@ -270,7 +275,7 @@
             "type": "string",
             "hidden": true
         },
-        "full_scheme_name": {
+        "_pangolin_options": {
             "type": "string",
             "hidden": true
         },
