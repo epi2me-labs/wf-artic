@@ -66,7 +66,7 @@ def output_json(df, consensus_fasta):
                 'readcount': readcounts[entry.name],
                 'coverage': all_json[entry.name]
             })
-    return(final_json)
+    return final_json
 
 
 def main():
