@@ -128,7 +128,8 @@ def compile_table(
         CH1_conf = 0
 
         # If a call exists for this locus
-        if calls := entry[CALLS]:
+        if CALLS in entry:
+            calls = entry[CALLS]
             top_call = calls[0]
             # Note this is a simplification of the likelihood
             # assigned to this call because it does not take
