@@ -209,8 +209,7 @@ process report {
         path "params.json"
         path "consensus_fasta"
         path "telemetry.json"
-        val samples
-        val types
+        val metadata
     output:
         path "wf-artic-*.html"
         path "*.json"
@@ -223,9 +222,12 @@ process report {
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
     def debug = params.report_detailed as Boolean ? "--telemetry telemetry.json" : "--hide_debug"
+
+    def metadata = new JsonBuilder(metadata).toPrettyString()
     """
     echo "$pangolin"
     echo "$nextclade"
+    echo '${metadata}' > metadata.json
     report.py \
         consensus_status.txt $report_name \
         $pangolin $coverage $var_summary \
@@ -242,8 +244,7 @@ process report {
         --versions versions \
         --params params.json \
         --consensus_fasta $consensus_fasta \
-        --samples $samples \
-        --types $types
+        --metadata metadata.json
     """
 }
 
@@ -482,11 +483,9 @@ workflow pipeline {
                 workflow_params,
                 all_consensus[0],
                 telemetry_output,
-                // sample_ids
-                samples.map{ it -> it[1].sample_id}.toList().map{ it.join(' ')},
-                // sample types
-                samples.map{ it -> it[1].type}.toList().map{ it.join(' ')}
+                samples.map { it -> return it[1] }.toList(),
                 )
+
             results = all_consensus[0].concat(
                 telemetry.out.json,
                 all_consensus[1],

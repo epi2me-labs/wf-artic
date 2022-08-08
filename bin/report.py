@@ -141,11 +141,8 @@ def main():
         "--consensus_fasta",
         help="Fasta of all conesusus seqeunces")
     parser.add_argument(
-        "--samples", nargs='+', default='unknown',
-        help="space separated list of samples")
-    parser.add_argument(
-        "--types", nargs='+', default='unknown',
-        help="space separated list of sample types")
+        "--metadata", default='metadata.json',
+        help="sample metadata")
     args = parser.parse_args()
     report_doc = report.WFReport(
         "SARS-CoV-2 ARTIC Sequencing report", "wf-artic",

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Changed
 - Fastqingress metadata map
+### Fixed
+- Metadata map handling
 
 ## [v0.3.18]
 ### Changes
