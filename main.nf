@@ -514,6 +514,10 @@ WorkflowMain.initialise(workflow, params, log)
 
 workflow {
 
+    if (params.disable_ping == false) {
+        Pinguscript.ping_post(workflow, "start", "none", params.out_dir, params)
+    }
+
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
     c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
@@ -671,4 +675,15 @@ workflow {
     results = pipeline(samples, params.scheme_dir, params.scheme_name, params.scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
     output(results)
+}
+
+
+if (params.disable_ping == false) {
+    workflow.onComplete {
+        Pinguscript.ping_post(workflow, "end", "none", params.out_dir, params)
+    }
+
+    workflow.onError {
+        Pinguscript.ping_post(workflow, "error", "$workflow.errorMessage", params.out_dir, params)
+    }
 }
