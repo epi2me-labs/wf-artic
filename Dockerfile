@@ -1,10 +1,10 @@
-ARG BASEIMAGE=ontresearch/base-workflow-image:v0.1.0
+ARG BASEIMAGE=ontresearch/base-workflow-image:v0.2.0
 FROM $BASEIMAGE
 ARG ENVFILE=environment.yaml
 
 COPY $ENVFILE $HOME/environment.yaml
 RUN \
-    . $CONDA_DIR/etc/profile.d/mamba.sh \
+    . $CONDA_DIR/etc/profile.d/micromamba.sh  \
     && micromamba activate \
     && micromamba install -n base --file $HOME/environment.yaml \
     # run medaka to download some models needed for variant calling
