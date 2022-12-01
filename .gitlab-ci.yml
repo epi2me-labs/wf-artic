@@ -5,60 +5,61 @@ include:
 variables:
     NF_WORKFLOW_OPTS: "--fastq test_data/fastq --samples test_data/sample_sheet.csv"
     NF_IGNORE_PROCESSES: "checkSampleSheet,combineGenotypeSummaries,genotypeSummary,report_no_data"
-    IMAGE_TAG: "NO_UPDATE"
+    CI_FLAVOUR: "new"
+    # IMAGE_TAG: "NO_UPDATE"
 
-check-versions:
-  stage: pre-custom-builds
-  image: conda/miniconda3:latest
-  needs: []
-  script:
-    - apt-get update && apt-get -y install gcc
-    - pip install cachetools==4.1.0 docker==4.2.0 PyGithub==1.54 requests==2.20.0 semver==2.13.0 packaging
-    - python3 bin/check_aux_versions.py --docker_registry 'ontresearch/pangolin' --github_repository 'cov-lineages/pangolin' --token ${LABS_BOT_GH_TOKEN} --tool pangolin -p v > ./pangolin.txt
-    - python3 bin/check_aux_versions.py --docker_registry 'ontresearch/nextclade' --github_repository 'nextstrain/nextclade' --token ${LABS_BOT_GH_TOKEN} --tool nextclade > ./nextclade.txt
-  artifacts:
-    paths:
-      - pangolin.txt
-      - nextclade.txt
-    expire_in: 1 day
-  rules:
-      - if: '$CI_PIPELINE_SOURCE == "schedule"'
-
-.release:
-    stage: custom-builds
-    needs: ['check-versions']
-    before_script:
-        - export IMAGE_TAG=`cat ${FILE_NAME} | grep ACTION | cut -f2 -d":"`
-        - if [ "${IMAGE_TAG}" == "NO_UPDATE" ]; then echo "${IMAGE_NAME} already at latest version"; exit 0; fi;
-        - IMAGE_DOCKERFILE="${IMAGE_DOCKERFILE:-Dockerfile}"
-        - if [ -z "${IMAGE_NAME}" ]; then "IMAGE_NAME was not set"; exit 1; fi;
-        - if [ -z "${IMAGE_TAG}" ]; then "IMAGE_TAG was not set"; exit 1; fi;
-        - echo "Building auxiliary container with:"
-        - echo " - Dockerfile:'${IMAGE_DOCKERFILE}'"
-        - echo " - Image name:'${IMAGE_NAME}'"
-    script:
-        - !reference [.install, glibc-alpine]
-        - !reference [.install, awscli]
-        - echo ${DOCKERHUB_TOKEN} | docker login --username epi2melabs --password-stdin
-        - LATEST="${DOCKERHUB_NAMESPACE}/${IMAGE_NAME}:${IMAGE_TAG}"
-        - BUILD_CMD="docker build --no-cache -t ${LATEST} -f ${IMAGE_DOCKERFILE} . --build-arg IMAGE_TAG=${IMAGE_TAG}"
-        - echo "${BUILD_CMD}"
-        - ${BUILD_CMD}
-        - docker push ${LATEST}
-    rules:
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
-          when: on_success
-
-release-pangolin:
-  extends: .release
-  variables:
-    IMAGE_NAME: "pangolin"
-    FILE_NAME: "pangolin.txt"
-    IMAGE_DOCKERFILE: "Dockerfile_pangolin"
-
-release-nextclade:
-  extends: .release
-  variables:
-      IMAGE_NAME: "nextclade"
-      FILE_NAME: "nextclade.txt"
-      IMAGE_DOCKERFILE: "Dockerfile_nextclade"
+# check-versions:
+#   stage: pre-custom-builds
+#   image: conda/miniconda3:latest
+#   needs: []
+#   script:
+#     - apt-get update && apt-get -y install gcc
+#     - pip install cachetools==4.1.0 docker==4.2.0 PyGithub==1.54 requests==2.20.0 semver==2.13.0 packaging
+#     - python3 bin/check_aux_versions.py --docker_registry 'ontresearch/pangolin' --github_repository 'cov-lineages/pangolin' --token ${LABS_BOT_GH_TOKEN} --tool pangolin -p v > ./pangolin.txt
+#     - python3 bin/check_aux_versions.py --docker_registry 'ontresearch/nextclade' --github_repository 'nextstrain/nextclade' --token ${LABS_BOT_GH_TOKEN} --tool nextclade > ./nextclade.txt
+#   artifacts:
+#     paths:
+#       - pangolin.txt
+#       - nextclade.txt
+#     expire_in: 1 day
+#   rules:
+#       - if: '$CI_PIPELINE_SOURCE == "schedule"'
+#
+# .release:
+#     stage: custom-builds
+#     needs: ['check-versions']
+#     before_script:
+#         - export IMAGE_TAG=`cat ${FILE_NAME} | grep ACTION | cut -f2 -d":"`
+#         - if [ "${IMAGE_TAG}" == "NO_UPDATE" ]; then echo "${IMAGE_NAME} already at latest version"; exit 0; fi;
+#         - IMAGE_DOCKERFILE="${IMAGE_DOCKERFILE:-Dockerfile}"
+#         - if [ -z "${IMAGE_NAME}" ]; then "IMAGE_NAME was not set"; exit 1; fi;
+#         - if [ -z "${IMAGE_TAG}" ]; then "IMAGE_TAG was not set"; exit 1; fi;
+#         - echo "Building auxiliary container with:"
+#         - echo " - Dockerfile:'${IMAGE_DOCKERFILE}'"
+#         - echo " - Image name:'${IMAGE_NAME}'"
+#     script:
+#         - !reference [.install, glibc-alpine]
+#         - !reference [.install, awscli]
+#         - echo ${DOCKERHUB_TOKEN} | docker login --username epi2melabs --password-stdin
+#         - LATEST="${DOCKERHUB_NAMESPACE}/${IMAGE_NAME}:${IMAGE_TAG}"
+#         - BUILD_CMD="docker build --no-cache -t ${LATEST} -f ${IMAGE_DOCKERFILE} . --build-arg IMAGE_TAG=${IMAGE_TAG}"
+#         - echo "${BUILD_CMD}"
+#         - ${BUILD_CMD}
+#         - docker push ${LATEST}
+#     rules:
+#         - if: '$CI_PIPELINE_SOURCE == "schedule"'
+#           when: on_success
+#
+# release-pangolin:
+#   extends: .release
+#   variables:
+#     IMAGE_NAME: "pangolin"
+#     FILE_NAME: "pangolin.txt"
+#     IMAGE_DOCKERFILE: "Dockerfile_pangolin"
+#
+# release-nextclade:
+#   extends: .release
+#   variables:
+#       IMAGE_NAME: "nextclade"
+#       FILE_NAME: "nextclade.txt"
+#       IMAGE_DOCKERFILE: "Dockerfile_nextclade"

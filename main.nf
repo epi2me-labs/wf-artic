@@ -47,7 +47,7 @@ process preArticQC {
 
 process runArtic {
     label "artic"
-    cpus 2
+    cpus params.artic_threads
     input:
         tuple file(directory), val(meta)
         file "primer_schemes"
@@ -211,11 +211,11 @@ process report {
         path "telemetry.json"
         val metadata
     output:
-        path "wf-artic-*.html"
+        path "wf-artic-report.html"
         path "*.json"
     script:
     // when genotype_variants is false the channel contains a mock file
-    def report_name = "wf-artic-" + params.report_name + '.html'
+    def report_name = "wf-artic-report.html"
     def genotype = params.genotype_variants ? "--genotypes genotypes/*" : ""
     def nextclade = params.report_clade as Boolean ? "--nextclade nextclade.json" : ""
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
@@ -261,7 +261,7 @@ process report_no_data {
         path "*.json", optional: true
     script:
     // when genotype_variants is false the channel contains a mock file
-    def report_name = "wf-artic-" + params.report_name + '.html'
+    def report_name = "wf-artic-report.html"
     def error_message = error
     """
     report_error.py \
@@ -363,22 +363,24 @@ process nextclade {
       nextclade dataset get --name 'sars-cov-2' --output-dir 'data/sars-cov-2' $update_tag
     fi
 
-    nextclade --version | sed 's/^/nextclade,/' > nextclade.version
+    nextclade_version=`nextclade --version | sed 's/^/nextclade,/'`
     echo "nextclade_data_tag,`cat $nextclade_dataset/tag.json  | grep -Po '"tag": *\\K"[^"]*"' | sed 's/\\"//g'`" >> nextclade.version
 
+
     nextclade run \
-        --input-fasta consensus.fasta \
         --input-pcr-primers primers.csv \
         --input-dataset $nextclade_dataset \
         --output-json nextclade.json \
-        --jobs 1
+        --jobs 1 \
+        --output-errors consensus.errors.csv \
+        consensus.fasta
     """
 }
 
 
 process pangolin {
     label "pangolin"
-    cpus 1
+    cpus params.pangolin_threads
     input:
         path "consensus.fasta"
     output:
@@ -391,7 +393,7 @@ process pangolin {
     fi
 
     pangolin --all-versions 2>&1 | sed 's/: /,/' > pangolin.version
-    pangolin $params._pangolin_options consensus.fasta
+    pangolin --threads ${task.cpus} $params._pangolin_options consensus.fasta
     """
 }
 
@@ -444,7 +446,6 @@ workflow pipeline {
             artic = runArtic(samples, scheme_directory)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
-            artic.consensus.view()
             all_consensus = allConsensus(artic.consensus.collect())
             all_variants = allVariants(
                 artic.pass_vcf.toList().transpose().toList(), reference)
@@ -669,8 +670,7 @@ workflow {
         "input":params.fastq,
         "sample":params.sample,
         "sample_sheet":params.sample_sheet,
-        "sanitize": params.sanitize_fastq,
-        "output":params.out_dir])
+        "unclassified":params.analyse_unclassified])
 
     results = pipeline(samples, params.scheme_dir, params.scheme_name, params.scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)

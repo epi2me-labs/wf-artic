@@ -6,7 +6,7 @@ genomes that have been DNA sequenced using a pooled tiling amplicon strategy.
 
 The workflow consumes a folder containing demultiplexed sequence reads as
 prepared by either MinKNOW or Guppy. The workflow needs to know the primer
-scheme that has been used during genome amplication and library preparation
+scheme that has been used during genome amplification and library preparation
 e.g. ARTIC/V3 or ONT_Midnight/V1. Other parameters can be specified to e.g.
 assign sample names to the barcodes or to adjust the length distribution of
 acceptable amplicon sequences.
@@ -24,17 +24,8 @@ is performed using Pangolin.
 
 The completed analysis is summarised in an HTML format report that summarises
 key information that includes number of reads, depth of coverage information
-per amplicon and both the Nextclade and Pangolin information. 
+per amplicon and both the Nextclade and Pangolin information.
 
-
-
-
-
-
-
-
-
-
-
-
-
+More information can be found in these two blog posts:
+* [SARS-CoV-2 Midnight Analysis](https://labs.epi2me.io/sarscov2-midnight-analysis/)
+* [Midnight Scheme Update](https://labs.epi2me.io/ont-midnight-scheme-update/)

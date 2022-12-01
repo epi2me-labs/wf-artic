@@ -123,9 +123,9 @@ def compile_table(
     for entry in results:
         # Begin with default values
         result = "No mutation"
-        CH1_result = "wt"
-        CH1_target = entry[ID]
-        CH1_conf = 0
+        ch1_result = "wt"
+        ch1_target = entry[ID]
+        ch1_conf = 0
 
         # If a call exists for this locus
         if CALLS in entry:
@@ -135,33 +135,33 @@ def compile_table(
             # assigned to this call because it does not take
             # into account the probabilities given to any
             # of the alternatives.
-            CH1_conf = 1 - (10 ** (-top_call[QUAL] / 10))
-            CH1_conf = f"{CH1_conf:.2f}"
+            ch1_conf = 1 - (10 ** (-top_call[QUAL] / 10))
+            ch1_conf = f"{ch1_conf:.2f}"
             # If the call is to the expected alt
             # we consider it an expected "mutation"
             # Note, we do not expect bi-allelic calls
             # to appear in medaka output
             if top_call['ALT'] == entry['ALT']:
-                CH1_result = "mt"
+                ch1_result = "mt"
                 result = "Mutation"
             # Else if the call is not the ref (and also not
             # the expected alt), then we are provisionally
             # marking the call as "variant"
             elif top_call['ALT'] not in ['.', entry['REF']]:
-                CH1_result = "vr"
+                ch1_result = "vr"
                 result = "Variant"
             # Independent of the above, if the quality of
             # the call does not meet the minimum threshold,
             # mark the call as invalid
             if top_call[QUAL] < valid_quality:
-                CH1_result = "n/a"
+                ch1_result = "n/a"
                 result = "Low quality"
 
         # Filter by coverage
         if entry[COV] < valid_coverage:
-            CH1_result = "n/a"
+            ch1_result = "n/a"
             result = "No Amplification"
-            CH1_conf = 0
+            ch1_conf = 0
 
         table_data.append({
             'Sample': sample,
@@ -169,14 +169,14 @@ def compile_table(
             'Date Tested': timestamp,
             'Lab ID': lab_id,
             'testKit': testkit,
-            'CH1-Target': CH1_target,
-            'CH1-Result': CH1_result,
-            'CH1-Conf': CH1_conf
+            'ch1-Target': ch1_target,
+            'ch1-Result': ch1_result,
+            'ch1-Conf': ch1_conf
         })
 
     table_df = pd.DataFrame(table_data)
     table_df = table_df.sort_values(
-        by=['Sample', 'CH1-Target'], ascending=False)
+        by=['Sample', 'ch1-Target'], ascending=False)
     return table_df
 
 

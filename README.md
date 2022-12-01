@@ -11,7 +11,7 @@ genomes that have been DNA sequenced using a pooled tiling amplicon strategy.
 
 The workflow consumes a folder containing demultiplexed sequence reads as
 prepared by either MinKNOW or Guppy. The workflow needs to know the primer
-scheme that has been used during genome amplication and library preparation
+scheme that has been used during genome amplification and library preparation
 e.g. ARTIC/V3 or ONT_Midnight/V1. Other parameters can be specified to e.g.
 assign sample names to the barcodes or to adjust the length distribution of
 acceptable amplicon sequences.
@@ -29,20 +29,11 @@ is performed using Pangolin.
 
 The completed analysis is summarised in an HTML format report that summarises
 key information that includes number of reads, depth of coverage information
-per amplicon and both the Nextclade and Pangolin information. 
+per amplicon and both the Nextclade and Pangolin information.
 
-
-
-
-
-
-
-
-
-
-
-
-
+More information can be found in these two blog posts:
+* [SARS-CoV-2 Midnight Analysis](https://labs.epi2me.io/sarscov2-midnight-analysis/)
+* [Midnight Scheme Update](https://labs.epi2me.io/ont-midnight-scheme-update/)
 ## Quickstart
 
 The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
@@ -51,9 +42,9 @@ to run the workflow.
 
 The workflow can currently be run using either
 [Docker](https://www.docker.com/products/docker-desktop) or
-[conda](https://docs.conda.io/en/latest/miniconda.html) to provide isolation of
+[singularity](https://docs.sylabs.io/guides/latest/user-guide/) to provide isolation of
 the required software. Both methods are automated out-of-the-box provided
-either docker of conda is installed.
+either docker or singularity is installed.
 
 It is not required to clone or download the git repository in order to run the workflow.
 For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
@@ -81,4 +72,4 @@ The primary outputs of the workflow include:
 * [artic](https://github.com/artic-network/fieldbioinformatics)
 * [nextflow](https://www.nextflow.io/)
 * [docker](https://www.docker.com/products/docker-desktop)
-* [conda](https://docs.conda.io/en/latest/miniconda.html)
+* [singularity](https://docs.sylabs.io/guides/latest/user-guide/)
