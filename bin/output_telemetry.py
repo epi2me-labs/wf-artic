@@ -105,7 +105,7 @@ def build_telemetry(
     # Minor check that all sample data is present
     for arg in [alignments, calls]:
         if len(arg) != len(samples):
-            print(
+            sys.stderr.write(
                 "Error: samples, alignments and calls "
                 "must be the same length.")
             sys.exit(1)

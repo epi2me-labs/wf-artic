@@ -6,6 +6,7 @@ import functools
 import json
 import re
 import subprocess
+import sys
 
 from cachetools import cached, TTLCache
 from cachetools.keys import hashkey
@@ -81,7 +82,7 @@ def get_image_tags(image, prefix=None, proxies=None):
     try:
         tags_data = _get_image_meta(image, proxies=proxies)
     except Exception:
-        print("Failed to fetch image information from dockerhub")
+        sys.stderr.write("Failed to fetch image information from dockerhub\n")
         return [None]
 
     tags = process_tags(tags_data, prefix)
@@ -170,7 +171,7 @@ def conda_newest_tag(repository, prefix=None):
 
     for line in conda_output.stdout.decode('utf-8').split("\n"):
         if line.startswith(repository):
-            package, name, hash, repo = re.split(" +", line.rstrip())
+            package, name, repo_hash, repo = re.split(" +", line.rstrip())
             tags_data.append({'name': name})
 
     tags = process_tags(tags_data, prefix)
@@ -220,7 +221,7 @@ def main():
 
     docker_newest = docker_newest_tag(args.docker_registry)
 
-    print(f"DOCKER:{docker_newest}")
+    sys.stdout.write(f"DOCKER:{docker_newest}\n")
 
     github_newest = github_newest_tag(
             args.github_repository,
@@ -228,22 +229,22 @@ def main():
             token=args.token
         )
 
-    print(f"GITHUB:{github_newest}")
+    sys.stdout.write(f"GITHUB:{github_newest}\n")
 
     conda_newest = conda_newest_tag(args.tool)
 
-    print(f"CONDA:{conda_newest}")
+    sys.stdout.write(f"CONDA:{conda_newest}\n")
 
     try:
         if semver.compare(
                 docker_newest,
                 conda_newest
                 ) == -1:
-            print(f"ACTION:{conda_newest}")
+            sys.stdout.write(f"ACTION:{conda_newest}\n")
         else:
-            print("ACTION:NO_UPDATE")
+            sys.stdout.write("ACTION:NO_UPDATE\n")
     except ValueError:
-        print(f"ACTION:{conda_newest}")
+        sys.stdout.write(f"ACTION:{conda_newest}\n")
 
 
 if __name__ == "__main__":

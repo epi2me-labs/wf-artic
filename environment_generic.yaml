@@ -1,7 +1,0 @@
-name: epi2melabs-generic
-channels:
-    - bioconda
-    - conda-forge
-    - defaults
-dependencies:
-    - git
