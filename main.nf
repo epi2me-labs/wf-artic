@@ -14,20 +14,7 @@ process checkSampleSheet {
     output:
         file "samples.txt"
     """
-    check_sample_sheet.py sample_sheet.txt samples.txt
-    """
-}
-
-
-process copySchemeDir {
-    label "artic"
-    cpus 1
-    input:
-        path scheme_directory
-    output:
-        path "scheme_dir"
-    """
-    cp -RL $scheme_directory scheme_dir
+    workflow-glue check_sample_sheet sample_sheet.txt samples.txt
     """
 }
 
@@ -50,7 +37,7 @@ process runArtic {
     cpus params.artic_threads
     input:
         tuple file(directory), val(meta)
-        file "primer_schemes"
+        path scheme_dir
     output:
         path "${meta.sample_id}.consensus.fasta", emit: consensus
         path "${meta.sample_id}.depth.txt", emit: depth_stats
@@ -78,7 +65,7 @@ process runArtic {
     """
     run_artic.sh \
         ${meta.sample_id} ${directory} ${params._min_len} ${params._max_len} \
-        ${params.medaka_model} ${params.scheme_name} ${params.scheme_dir} \
+        ${params.medaka_model} ${params.scheme_name} ${scheme_dir} \
         ${params.scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
     bcftools stats ${meta.sample_id}.pass.named.vcf.gz > ${meta.sample_id}.pass.named.stats
     """
@@ -114,7 +101,7 @@ process genotypeSummary {
         def lab_id = params.lab_id ? "--lab_id ${params.lab_id}" : ""
         def testkit = params.testkit ? "--testkit ${params.testkit}" : ""
     """
-    genotype_summary.py \
+    workflow-glue genotype_summary \
         -b $bam \
         -v $vcf \
         -d reference.vcf \
@@ -134,7 +121,7 @@ process combineGenotypeSummaries {
     output:
         file "genotype_summary.csv"
     """
-    combine_genotype_summaries.py -g *.csv -o genotype_summary.csv
+    workflow-glue combine_genotype_summaries -g *.csv -o genotype_summary.csv
     """
 }
 
@@ -169,30 +156,6 @@ process getParams {
 }
 
 
-process telemetry {
-    label "artic"
-    cpus 1
-    input:
-        tuple val(sample_id), file(bams), file(bais), file(vcfs), file(tbis)
-        path scheme_bed
-        path reference
-    output:
-        path "telemetry.json", emit: json
-    script:
-        def samples = sample_id.join(' ')
-    """
-    output_telemetry.py \
-        telemetry.json \
-        --scheme_name $params.scheme_name \
-        --scheme_bed $scheme_bed \
-        --reference $reference \
-        --samples $samples \
-        --alignments $bams \
-        --calls $vcfs
-    """
-}
-
-
 process report {
     label "artic"
     cpus 1
@@ -208,7 +171,6 @@ process report {
         path "versions/*"
         path "params.json"
         path "consensus_fasta"
-        path "telemetry.json"
         val metadata
     output:
         path "wf-artic-report.html"
@@ -221,14 +183,14 @@ process report {
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
-    def debug = params.report_detailed as Boolean ? "--telemetry telemetry.json" : "--hide_debug"
+    def debug = params.report_detailed as Boolean ? "" : "--hide_debug"
 
     def metadata = new JsonBuilder(metadata).toPrettyString()
     """
     echo "$pangolin"
     echo "$nextclade"
     echo '${metadata}' > metadata.json
-    report.py \
+    workflow-glue report \
         consensus_status.txt $report_name \
         $pangolin $coverage $var_summary \
         $nextclade $debug \
@@ -264,7 +226,7 @@ process report_no_data {
     def report_name = "wf-artic-report.html"
     def error_message = error
     """
-    report_error.py \
+    workflow-glue report_error \
         --output $report_name \
         --revision $workflow.revision --params params.json --commit $workflow.commitId \
         --versions versions --error_message \"$error_message\"
@@ -322,7 +284,7 @@ process prep_nextclade {
   output:
       file "primers.csv"
   """
-  scheme_to_nextclade.py $scheme_bed reference.fasta primers.csv
+  workflow-glue scheme_to_nextclade $scheme_bed reference.fasta primers.csv
   """
 }
 
@@ -433,7 +395,7 @@ workflow pipeline {
         software_versions = getVersions()
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
-        scheme_directory = copySchemeDir(projectDir.resolve("./data/${scheme_dir}"))
+        // scheme_directory = copySchemeDir(projectDir.resolve("./data/${scheme_dir}"))
         if ((samples.getClass() == String) && (samples.startsWith("Error"))){
             samples = channel.of(samples)
             html_doc = report_no_data(
@@ -443,7 +405,7 @@ workflow pipeline {
             results = html_doc[0].concat(html_doc[1])
         } else {
             read_summaries = preArticQC(samples)
-            artic = runArtic(samples, scheme_directory)
+            artic = runArtic(samples, scheme_dir)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
             all_consensus = allConsensus(artic.consensus.collect())
@@ -464,13 +426,8 @@ workflow pipeline {
             // pangolin
             pangolin(all_consensus[0])
             software_versions = software_versions.mix(pangolin.out.version,nextclade.out.version)
-            // telemetry
-            telemetry_output = telemetry(
-                artic.trimmed_bam.join(artic.pass_vcf).toList().transpose().toList(),
-                primers,
-                reference)
-            // report
 
+            // report
             html_doc = report(
                 artic.depth_stats.collect(),
                 read_summaries.collect(),
@@ -483,12 +440,10 @@ workflow pipeline {
                 software_versions.collect(),
                 workflow_params,
                 all_consensus[0],
-                telemetry_output,
                 samples.map { it -> return it[1] }.toList(),
                 )
 
             results = all_consensus[0].concat(
-                telemetry.out.json,
                 all_consensus[1],
                 all_variants[0].flatten(),
                 clades[0],
@@ -559,11 +514,6 @@ workflow {
           exit 1
       }
 
-      if (params.scheme_name == "spike-seq" && !params.genotype_variants) {
-          println("`--genotype_variants` is required for scheme: 'spike-seq'")
-          exit 1
-      }
-
       if (params.sample && params.detect_samples) {
           println("Select either `--sample` or `--detect_samples`, not both")
           exit 1
@@ -594,6 +544,8 @@ workflow {
           params.remove('max_len')
       }
 
+      schemes = """./data/${params.scheme_dir}"""
+      scheme_dir = file(projectDir.resolve(schemes), type:'file', checkIfExists:true)
       primers_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
       primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
 
@@ -672,7 +624,8 @@ workflow {
         "sample_sheet":params.sample_sheet,
         "unclassified":params.analyse_unclassified])
 
-    results = pipeline(samples, params.scheme_dir, params.scheme_name, params.scheme_version, reference,
+    println(scheme_dir)
+    results = pipeline(samples, scheme_dir, params.scheme_name, params.scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
     output(results)
 }

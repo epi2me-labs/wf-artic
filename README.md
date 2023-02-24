@@ -3,6 +3,10 @@
 This repository contains a [nextflow](https://www.nextflow.io/) workflow for
 running the ARTIC SARS-CoV-2 workflow on multiplexed MinION, GridION, and
 PromethION runs.
+
+
+
+
 ## Introduction
 
 The wf-artic workflow implements a slightly modified ARTIC FieldBioinformatics
@@ -34,6 +38,10 @@ per amplicon and both the Nextclade and Pangolin information.
 More information can be found in these two blog posts:
 * [SARS-CoV-2 Midnight Analysis](https://labs.epi2me.io/sarscov2-midnight-analysis/)
 * [Midnight Scheme Update](https://labs.epi2me.io/ont-midnight-scheme-update/)
+
+
+
+
 ## Quickstart
 
 The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
@@ -66,6 +74,10 @@ The primary outputs of the workflow include:
 * a [FASTA](https://en.wikipedia.org/wiki/FASTA) file containing the consensus sequence for all samples,
 * a [VCF](https://en.wikipedia.org/wiki/Variant_Call_Format) file sample all samples,
 * an HTML report document detailing QC metrics and the primary findings of the workflow.
+
+
+
+
 ## Useful links
 
 * [medaka](https://www.github.com/nanoporetech/medaka)
