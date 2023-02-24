@@ -66,9 +66,9 @@ def nextcladeVersionChecker(nextclade_data_tag){
 
     // now we have all the compatible data tags get the most recent
     def tag_list = []
-    date_parse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    date_parse = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'");
     compatible_tagged_dirs.each { val -> tag_list << date_parse.parse(val.getBaseName()) }
-    nextclade_data_tag = Collections.max(tag_list).format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    nextclade_data_tag = Collections.max(tag_list).format("yyyy-MM-dd'T'HH-mm-ss'Z'")
 
   } else{
 
