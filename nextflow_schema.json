@@ -70,13 +70,6 @@
                     "format": "path",
                     "description": "Path to a custom scheme.",
                     "help_text": "If you have a custom primer scheme you can enter the details here. This must be the full path to the directory containing your appropriately named scheme bed and fasta files; <SCHEME_NAME>.bed and <SCHEME_NAME>.fasta. More details [here](https://labs.epi2me.io/ont-midnight-scheme-update/)."
-                },
-                "scheme_dir": {
-                    "type": "string",
-                    "format": "path",
-                    "description": "Path to primer scheme.",
-                    "default": "primer_schemes",
-                    "hidden": true
                 }
             }
         },
@@ -234,6 +227,8 @@
                     "description": "Medaka model name.",
                     "help_text": "The correct medaka model to use is determined by the Guppy basecaller version, see [Medaka Models](https://github.com/nanoporetech/medaka#models) for more information.",
                     "enum": [
+                        "r1041_e82_400bps_hac_variant_g615",
+                        "r1041_e82_400bps_sup_variant_g615",
                         "r103_fast_variant_g507",
                         "r103_hac_variant_g507",
                         "r103_prom_variant_g3210",

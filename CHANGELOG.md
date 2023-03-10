@@ -4,13 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.23]
+### Changed
+- medaka bumped to 1.7.2 (np-artic bump to 1.3.0_19)
+### Added
+- medaka models for kit14 - R10.4.1
+### Fixed
+- scheme directory bug in labs/windows (https://github.com/epi2me-labs/wf-artic/issues/73)
+
 ## [v0.3.22]
 ### Changed
 - workflow-glue python psuedo package
 - pangolin to 4.2
 - nextclade to 2.11.0
-### Fixed
-- scheme directory bug in labs/windows (https://github.com/epi2me-labs/wf-artic/issues/73)
 ### Removed
 - spike-seq primer schemes
 - telemtry generation
