@@ -543,13 +543,15 @@ workflow {
           params._max_len = params.max_len
           params.remove('max_len')
       }
-
-      schemes = """./data/${params.scheme_dir}"""
+    
+      
+      scheme_dir_name = "primer_schemes"
+      schemes = """./data/${scheme_dir_name}"""
       scheme_dir = file(projectDir.resolve(schemes), type:'file', checkIfExists:true)
-      primers_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
+      primers_path = """./data/${scheme_dir_name}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
       primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
 
-      reference_path = """./data/${params.scheme_dir}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
+      reference_path = """./data/${scheme_dir_name}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
       reference = file(projectDir.resolve(reference_path),type:'file', checkIfExists:true)
 
     } else {
