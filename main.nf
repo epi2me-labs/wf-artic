@@ -65,8 +65,8 @@ process runArtic {
     """
     run_artic.sh \
         ${meta.sample_id} ${directory} ${params._min_len} ${params._max_len} \
-        ${params.medaka_model} ${params.scheme_name} ${scheme_dir} \
-        ${params.scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
+        ${params.medaka_model} ${params._scheme_name} ${scheme_dir} \
+        ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
     bcftools stats ${meta.sample_id}.pass.named.vcf.gz > ${meta.sample_id}.pass.named.stats
     """
 }
@@ -395,7 +395,7 @@ workflow pipeline {
         software_versions = getVersions()
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
-        // scheme_directory = copySchemeDir(projectDir.resolve("./data/${scheme_dir}"))
+
         if ((samples.getClass() == String) && (samples.startsWith("Error"))){
             samples = channel.of(samples)
             html_doc = report_no_data(
@@ -546,13 +546,17 @@ workflow {
     
       
       scheme_dir_name = "primer_schemes"
-      schemes = """./data/${scheme_dir_name}"""
+      schemes = """./data/${scheme_dir_name}/${params.scheme_name}"""
       scheme_dir = file(projectDir.resolve(schemes), type:'file', checkIfExists:true)
+
       primers_path = """./data/${scheme_dir_name}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.scheme.bed"""
       primers = file(projectDir.resolve(primers_path), type:'file', checkIfExists:true)
 
       reference_path = """./data/${scheme_dir_name}/${params.scheme_name}/${params.scheme_version}/${params.scheme_name}.reference.fasta"""
       reference = file(projectDir.resolve(reference_path),type:'file', checkIfExists:true)
+
+      params._scheme_version = params.scheme_version
+      params._scheme_name = params.scheme_name
 
     } else {
       //custom scheme path defined
@@ -561,9 +565,7 @@ workflow {
       primers = file("""${params.custom_scheme}/${params.scheme_name}.scheme.bed""", type:'file', checkIfExists:true)
       reference = file("""${params.custom_scheme}/${params.scheme_name}.reference.fasta""", type:'file', checkIfExists:true)
 
-
       // check to make sure min and max length have been set
-
       if (!params.max_len || !params.min_len) {
           log.info """${c_purple}EXITING: --min_len and --max_len parameters must be specified when using custom schemes.${c_reset}"""
           exit 1
@@ -572,11 +574,13 @@ workflow {
       params._max_len = params.max_len
       params.remove('max_len')
 
-
       params._min_len = params.min_len
       params.remove('min_len')
 
+      params._scheme_version = 'None'
+      params._scheme_name = params.scheme_name
 
+      scheme_dir =  params.custom_scheme
     }
 
     if (!params.max_softclip_length) {
@@ -589,13 +593,13 @@ workflow {
     }
 
     // Pangolin options
-      if (params.pangolin_options == null){
+    if (params.pangolin_options == null){
         params.remove('pangolin_options')
         params._pangolin_options = ''
-      } else {
+    } else {
         params._pangolin_options = params.pangolin_options
         params.remove('pangolin_options')
-      }
+    }
 
 
     // For nextclade choose the most recent data from the nextclade_data git submodule, or if nexclade_data_tag is set in params use that
@@ -626,8 +630,7 @@ workflow {
         "sample_sheet":params.sample_sheet,
         "unclassified":params.analyse_unclassified])
 
-    println(scheme_dir)
-    results = pipeline(samples, scheme_dir, params.scheme_name, params.scheme_version, reference,
+    results = pipeline(samples, scheme_dir, params._scheme_name, params._scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
     output(results)
 }

@@ -312,6 +312,14 @@
             "type": "string",
             "hidden": true
         },
+        "_scheme_version": {
+            "type": "string",
+            "hidden": true
+        },
+        "_scheme_name": {
+            "type": "string",
+            "hidden": true
+        },
         "_min_len": {
             "type": "string",
             "hidden": true
