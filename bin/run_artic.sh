@@ -2,7 +2,7 @@
 set -euo pipefail
 
 sample_name=$1
-directory=$2
+fastq_file=$2
 min_len=$3
 max_len=$4
 medaka_model=$5
@@ -34,9 +34,10 @@ EOF
 }
 
 # name everything by the sample rather than barcode
-if [[ "${directory}" != "${sample_name}" ]]; then
-    echo "Moving input: '${directory}' to '${sample_name}'"
-    mv ${directory} ${sample_name}
+if [[ "${fastq_file}" != "${sample_name}.fastq.gz" ]]; then
+    echo "Moving input: '${fastq_file}' to '${sample_name}/${sample_name}.fastq.gz'"
+    mkdir ${sample_name}
+    mv ${fastq_file} ${sample_name}/${sample_name}.fastq.gz
 fi
 
 artic guppyplex --skip-quality-check \
