@@ -3,7 +3,6 @@
 
 import json
 from math import log
-import os
 
 from aplanat import annot, bars, hist, lines, points, report
 from aplanat.components import bcfstats, nextclade
@@ -27,7 +26,7 @@ def read_files(summaries, **kwargs):
     return pd.concat(dfs)
 
 
-def output_json(df, consensus_fasta):
+def output_json(df, consensus_fasta, fastcat_stats):
     """Read depth stats df and create JSON output."""
     grouped_by_sample = df.groupby('sample_name')
     all_json = {}
@@ -50,11 +49,8 @@ def output_json(df, consensus_fasta):
             newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
-    readcounts = {}
-    for filename in os.listdir('read_stats'):
-        num_lines = sum(1 for line in open(
-            os.path.join('read_stats', filename)))
-        readcounts[os.path.splitext(filename)[0]] = num_lines-1
+    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t")
+    readcounts = seq_summary['sample_name'].value_counts().to_dict()
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
         for entry in fh:
@@ -217,8 +213,7 @@ def main(args):
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
-    seq_summary = read_files(
-        args.summaries, sep="\t", converters={'sample_name': str})
+    seq_summary = pd.read_csv(args.fastcat_stats, delimiter="\t")
     total_bases = seq_summary['read_length'].sum()
     mean_length = total_bases / len(seq_summary)
     median_length = np.median(seq_summary['read_length'])
@@ -328,7 +323,7 @@ comparing depth across samples.***
         # depth summary by amplicon pool
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
-        epi2me_json = output_json(df, args.consensus_fasta)
+        epi2me_json = output_json(df, args.consensus_fasta, args.fastcat_stats)
         json_object = json.dumps(epi2me_json, indent=4, separators=(',', ':'))
         json_file = open("artic.json", "a")
         json_file.write(json_object)
@@ -494,8 +489,8 @@ def argparser():
         "--telemetry",
         help="Workflow telemetry file")
     parser.add_argument(
-        "--summaries", nargs='+', required=True,
-        help="Sequencing summary files")
+        "--fastcat_stats", required=True,
+        help="fastcat summary file")
     parser.add_argument(
         "--nextclade",
         help="nextclade json output file")

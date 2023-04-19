@@ -18,56 +18,42 @@ process checkSampleSheet {
     """
 }
 
-
-process preArticQC {
-    label "artic"
-    cpus 1
-    input:
-        tuple file(directory), val(meta)
-    output:
-        file "${meta.sample_id}.stats"
-    """
-    fastcat -s ${meta.sample_id} -r ${meta.sample_id}.stats -x ${directory} > /dev/null
-    """
-}
-
-
 process runArtic {
     label "artic"
     cpus params.artic_threads
     input:
-        tuple file(directory), val(meta)
+        tuple val(meta), path(fastq_file), path(fastq_stats)
         path scheme_dir
     output:
-        path "${meta.sample_id}.consensus.fasta", emit: consensus
-        path "${meta.sample_id}.depth.txt", emit: depth_stats
-        path "${meta.sample_id}.pass.named.stats", emit: vcf_stats
+        path "${meta.alias}.consensus.fasta", emit: consensus
+        path "${meta.alias}.depth.txt", emit: depth_stats
+        path "${meta.alias}.pass.named.stats", emit: vcf_stats
         tuple(
-            val(meta.sample_id),
-            path("${meta.sample_id}.pass.named.vcf.gz"),
-            path("${meta.sample_id}.pass.named.vcf.gz.tbi"),
+            val(meta.alias),
+            path("${meta.alias}.pass.named.vcf.gz"),
+            path("${meta.alias}.pass.named.vcf.gz.tbi"),
             emit: pass_vcf)
         tuple(
-            val(meta.sample_id),
-            path("${meta.sample_id}.merged.gvcf.named.vcf.gz"),
-            path("${meta.sample_id}.merged.gvcf.named.vcf.gz.tbi"),
+            val(meta.alias),
+            path("${meta.alias}.merged.gvcf.named.vcf.gz"),
+            path("${meta.alias}.merged.gvcf.named.vcf.gz.tbi"),
             emit: merged_gvcf)
         tuple(
-            val(meta.sample_id),
-            path("${meta.sample_id}.primertrimmed.rg.sorted.bam"),
-            path("${meta.sample_id}.primertrimmed.rg.sorted.bam.bai"),
+            val(meta.alias),
+            path("${meta.alias}.primertrimmed.rg.sorted.bam"),
+            path("${meta.alias}.primertrimmed.rg.sorted.bam.bai"),
             emit: primertrimmed_bam)
         tuple(
-            val(meta.sample_id),
-            path("${meta.sample_id}.trimmed.rg.sorted.bam"),
-            path("${meta.sample_id}.trimmed.rg.sorted.bam.bai"),
+            val(meta.alias),
+            path("${meta.alias}.trimmed.rg.sorted.bam"),
+            path("${meta.alias}.trimmed.rg.sorted.bam.bai"),
             emit: trimmed_bam)
     """
     run_artic.sh \
-        ${meta.sample_id} ${directory} ${params._min_len} ${params._max_len} \
+        ${meta.alias} ${fastq_file} ${params._min_len} ${params._max_len} \
         ${params.medaka_model} ${params._scheme_name} ${scheme_dir} \
         ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
-    bcftools stats ${meta.sample_id}.pass.named.vcf.gz > ${meta.sample_id}.pass.named.stats
+    bcftools stats ${meta.alias}.pass.named.vcf.gz > ${meta.alias}.pass.named.stats
     """
 }
 
@@ -93,7 +79,7 @@ process genotypeSummary {
     label "artic"
     cpus 1
     input:
-        tuple val(sample_id), file(vcf), file(tbi), file(bam), file(bam_index)
+        tuple val(alias), file(vcf), file(tbi), file(bam), file(bam_index)
         file "reference.vcf"
     output:
         file "*genotype.csv"
@@ -105,7 +91,7 @@ process genotypeSummary {
         -b $bam \
         -v $vcf \
         -d reference.vcf \
-        --sample $sample_id \
+        --sample $alias \
         $lab_id \
         $testkit \
         -o ${csvName}.genotype.csv
@@ -161,7 +147,7 @@ process report {
     cpus 1
     input:
         path "depth_stats/*"
-        path "read_stats/*"
+        path fastcat_stats
         path "nextclade.json"
         path nextclade_errors
         path "pangolin.csv"
@@ -201,7 +187,7 @@ process report {
         --max_len $params._max_len \
         --report_depth $params.report_depth \
         --depths depth_stats/* \
-        --summaries read_stats/* \
+        --fastcat_stats $fastcat_stats \
         --bcftools_stats vcf_stats/* $genotype \
         --versions versions \
         --params params.json \
@@ -255,7 +241,7 @@ process allVariants {
     label "artic"
     cpus 1
     input:
-        tuple val(sample_id), file(vcfs), file(tbis)
+        tuple val(alias), file(vcfs), file(tbis)
         file reference
     output:
         tuple file("all_variants.vcf.gz"), file("all_variants.vcf.gz.tbi")
@@ -404,7 +390,6 @@ workflow pipeline {
                 workflow_params)
             results = html_doc[0].concat(html_doc[1])
         } else {
-            read_summaries = preArticQC(samples)
             artic = runArtic(samples, scheme_dir)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
@@ -430,7 +415,7 @@ workflow pipeline {
             // report
             html_doc = report(
                 artic.depth_stats.collect(),
-                read_summaries.collect(),
+                samples | map { it[2].resolve("per-read-stats.tsv") } | collectFile(keepHeader: true),
                 clades[0].collect(),
                 clades[1].collect(),
                 pangolin.out.report.collect(),
@@ -440,7 +425,7 @@ workflow pipeline {
                 software_versions.collect(),
                 workflow_params,
                 all_consensus[0],
-                samples.map { it -> return it[1] }.toList(),
+                samples.map { it -> return it[0] }.toList(),
                 )
 
             results = all_consensus[0].concat(
@@ -628,7 +613,8 @@ workflow {
         "input":params.fastq,
         "sample":params.sample,
         "sample_sheet":params.sample_sheet,
-        "unclassified":params.analyse_unclassified])
+        "fastcat_stats": true,
+        "analyse_unclassified":params.analyse_unclassified])
 
     results = pipeline(samples, scheme_dir, params._scheme_name, params._scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
