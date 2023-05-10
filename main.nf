@@ -18,12 +18,28 @@ process checkSampleSheet {
     """
 }
 
+process lookup_medaka_variant_model {
+    label "artic"
+    input:
+        path("lookup_table")
+        val basecall_model
+    output:
+        stdout
+    shell:
+    '''
+    medaka_model=$(workflow-glue resolve_medaka_model lookup_table '!{basecall_model}' "medaka_variant")
+    echo -n $medaka_model
+    '''
+}
+
+
 process runArtic {
     label "artic"
     cpus params.artic_threads
     input:
         tuple val(meta), path(fastq_file), path(fastq_stats)
         path scheme_dir
+        val(medaka_model)
     output:
         path "${meta.alias}.consensus.fasta", emit: consensus
         path "${meta.alias}.depth.txt", emit: depth_stats
@@ -51,7 +67,7 @@ process runArtic {
     """
     run_artic.sh \
         ${meta.alias} ${fastq_file} ${params._min_len} ${params._max_len} \
-        ${params.medaka_model} ${params._scheme_name} ${scheme_dir} \
+        ${medaka_model} ${params._scheme_name} ${scheme_dir} \
         ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
     bcftools stats ${meta.alias}.pass.named.vcf.gz > ${meta.alias}.pass.named.stats
     """
@@ -382,6 +398,16 @@ workflow pipeline {
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
 
+        // get the medaka model from basecalling model, or override with params.medaka_variant_model
+        if(params.medaka_variant_model) {
+            log.warn "Overriding Medaka Variant model with ${params.medaka_variant_model}."
+            medaka_variant_model = Channel.fromList([params.medaka_variant_model])
+        }
+        else {
+            lookup_table = Channel.fromPath("${projectDir}/data/medaka_models.tsv", checkIfExists: true)
+            medaka_variant_model = lookup_medaka_variant_model(lookup_table, params.basecaller_cfg)
+        }
+
         if ((samples.getClass() == String) && (samples.startsWith("Error"))){
             samples = channel.of(samples)
             html_doc = report_no_data(
@@ -390,7 +416,7 @@ workflow pipeline {
                 workflow_params)
             results = html_doc[0].concat(html_doc[1])
         } else {
-            artic = runArtic(samples, scheme_dir)
+            artic = runArtic(samples, scheme_dir, medaka_variant_model)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
             all_consensus = allConsensus(artic.consensus.collect())
