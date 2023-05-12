@@ -1,6 +1,6 @@
 # ARTIC SARS-CoV-2 Workflow
 
-This repository contains a [nextflow](https://www.nextflow.io/) workflow for
+This repository contains a [Nextflow](https://www.nextflow.io/) workflow for
 running the ARTIC SARS-CoV-2 workflow on multiplexed MinION, GridION, and
 PromethION runs.
 
@@ -16,9 +16,12 @@ genomes that have been DNA sequenced using a pooled tiling amplicon strategy.
 The workflow consumes a folder containing demultiplexed sequence reads as
 prepared by either MinKNOW or Guppy. The workflow needs to know the primer
 scheme that has been used during genome amplification and library preparation
-e.g. ARTIC/V3 or ONT_Midnight/V1. Other parameters can be specified to e.g.
+e.g. ARTIC/V3 or ONT_Midnight/V1. Other parameters can be specified too e.g.
 assign sample names to the barcodes or to adjust the length distribution of
-acceptable amplicon sequences.
+acceptable amplicon sequences. The Medaka variant model is selected based on the
+provided basecaller configuration (using the parameter `--basecaller_cfg`), or
+alternatively the Medaka model can be provided directly via the `--medaka_variant_model`
+parameter.
 
 DNA sequences in FASTQ format are aggregated, filtered for sequence length and
 quality characteristics and are mapped to the reference SARS-CoV-2 genome using
@@ -44,18 +47,18 @@ More information can be found in these two blog posts:
 
 ## Quickstart
 
-The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and
-software resources, as such nextflow will need to be installed before attempting
+The workflow uses [Nextflow](https://www.nextflow.io/) to manage compute and
+software resources, as such Nextflow will need to be installed before attempting
 to run the workflow.
 
 The workflow can currently be run using either
 [Docker](https://www.docker.com/products/docker-desktop) or
-[singularity](https://docs.sylabs.io/guides/latest/user-guide/) to provide isolation of
+[Singularity](https://docs.sylabs.io/guides/latest/user-guide/) to provide isolation of
 the required software. Both methods are automated out-of-the-box provided
-either docker or singularity is installed.
+either Docker or Singularity is installed.
 
 It is not required to clone or download the git repository in order to run the workflow.
-For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
+For more information on running EPI2ME Labs workflows [visit our website](https://labs.epi2me.io/wfindex).
 
 **Workflow options**
 
@@ -80,8 +83,8 @@ The primary outputs of the workflow include:
 
 ## Useful links
 
-* [medaka](https://www.github.com/nanoporetech/medaka)
-* [artic](https://github.com/artic-network/fieldbioinformatics)
-* [nextflow](https://www.nextflow.io/)
-* [docker](https://www.docker.com/products/docker-desktop)
-* [singularity](https://docs.sylabs.io/guides/latest/user-guide/)
+* [Medaka](https://www.github.com/nanoporetech/medaka)
+* [Artic](https://github.com/artic-network/fieldbioinformatics)
+* [Nextflow](https://www.nextflow.io/)
+* [Docker](https://www.docker.com/products/docker-desktop)
+* [Singularity](https://docs.sylabs.io/guides/latest/user-guide/)

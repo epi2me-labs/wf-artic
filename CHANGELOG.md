@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Changed
 - `--basecall_cfg` is now used to determine a suitable Medaka model, alternatively provide the name of a model with `--medaka_variant_model` to override automatic selection
+- Update documentation.
 
 ## [v0.3.25]
 ### Updated

@@ -1,7 +1,7 @@
 ## Useful links
 
-* [medaka](https://www.github.com/nanoporetech/medaka)
-* [artic](https://github.com/artic-network/fieldbioinformatics)
-* [nextflow](https://www.nextflow.io/)
-* [docker](https://www.docker.com/products/docker-desktop)
-* [singularity](https://docs.sylabs.io/guides/latest/user-guide/)
+* [Medaka](https://www.github.com/nanoporetech/medaka)
+* [Artic](https://github.com/artic-network/fieldbioinformatics)
+* [Nextflow](https://www.nextflow.io/)
+* [Docker](https://www.docker.com/products/docker-desktop)
+* [Singularity](https://docs.sylabs.io/guides/latest/user-guide/)
