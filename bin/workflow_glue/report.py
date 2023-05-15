@@ -2,15 +2,13 @@
 """Create report file."""
 
 import json
-from math import log
 
-from aplanat import annot, bars, hist, lines, points, report
+from aplanat import annot, bars, hist, lines, report
 from aplanat.components import bcfstats, nextclade
 from aplanat.components import simple as scomponents
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
-from bokeh.models import ColumnDataSource, FixedTicker, Panel, Range1d, Tabs
-from bokeh.plotting import figure
+from bokeh.models import Panel, Range1d, Tabs
 import numpy as np
 import pandas as pd
 import pysam
@@ -87,124 +85,6 @@ def main(args):
      More details are provided
      [here](https://labs.epi2me.io/sarscov2-midnight-analysis).
     ''')
-
-    if not args.hide_debug:
-        section = report_doc.add_section()
-        section.markdown('''
-    ### Debugging
-    This section displays additional information useful for debugging
-    ''')
-
-        with open(args.telemetry) as f:
-            d = json.load(f)
-
-            amplicons = []
-            coverages = []
-            names = []
-            colors = list()
-            bad_amplicons = dict()
-
-            for barcode in d['barcodes']:
-                names.append(barcode)
-                colors.append('#0084a9')
-                x = []
-                y = []
-
-                for amplicon in d['barcodes'][barcode]['amplicons']:
-                    amplicon_number = int(amplicon.split("_")[1])
-                    median = float(d['barcodes'][barcode]['amplicons']
-                                   [amplicon]['coverage']['median'])
-                    if median < 20:
-                        if amplicon_number not in bad_amplicons:
-                            bad_amplicons[amplicon_number] = list()
-                        bad_amplicons[amplicon_number].append(barcode)
-                    x.append(int(amplicon_number))
-                    y.append(log(float(median)) if float(median) != 0 else 0)
-
-                amplicons.append(x)
-                coverages.append(y)
-            section.markdown('''
-        #### Batch Pass/Failure
-        This section describes if a batch passes or fails our thresholds.''')
-
-            bad_amplicon_count = 0
-            text = ['<ul>']
-            for amplicon in bad_amplicons:
-                if len(bad_amplicons[amplicon]) > 2:
-                    bad_amplicon_count += 1
-                    text.append(
-                        '<li><strong>Amplicon '+str(amplicon)+':</strong> ' +
-                        str(len(bad_amplicons[amplicon]))+' Samples</li>'
-                    )
-
-            text.append('</ul>')
-
-            # waiting on new aplanat
-            # section.alert(
-            #     title="Amplicons with >2 samples with <20x median coverage",
-            #     text="\n".join(text), level="info")
-
-            section.markdown('''
-        #### Coverage of All Samples Per Amplicon
-        *N.B. This is the downsampled coverage*
-        ''')
-
-            p = points.points(
-                amplicons, coverages, ylim=(-1, 8), xlim=(0, 30),
-                title="Median Coverage by Amplicon & Sample",
-                names=names,
-                colors=colors)
-
-            p.xaxis.ticker = FixedTicker(ticks=list(range(1, 30)))
-            p.xaxis.axis_label = 'Amplicon'
-            p.yaxis.axis_label = 'log(Median Coverage)'
-            p.legend.visible = False
-            section.plot(p)
-
-        section.markdown('''
-    #### Location of Ns in Final Consensus
-    This plot shows the location of Ns in the consensus sequence, useful
-    for seeing the implications of coverage dropouts.
-    ''')
-        barcodes = list()
-        positions = list()
-        values = list()
-
-        with pysam.FastxFile(args.consensus_fasta) as fh:
-            for entry in fh:
-                for count, base in enumerate(entry.sequence):
-                    if base == "N":
-                        barcodes.append(entry.name)
-                        positions.append(count)
-                        values.append(1)
-
-        data = {'barcode': barcodes, 'position': positions, 'value': values}
-
-        df = pd.DataFrame.from_dict(data)
-
-        p = figure(
-            title="Location of Ns in Consensus",
-            tooltips=None,
-            plot_width=1200,
-            plot_height=800,
-            x_range=(0, 30000),
-            y_range=list(df.barcode.drop_duplicates()),
-            toolbar_location="above",
-            x_axis_location="below",
-            y_axis_location="right"
-        )
-
-        p.rect(
-            x="position",
-            y="barcode",
-            width=1,
-            height=1,
-            source=ColumnDataSource(df),
-            line_color=None,
-            fill_color='#0084a9'
-        )
-
-        section.plot(p)
 
     section = report_doc.add_section()
     section.markdown('''
@@ -486,9 +366,6 @@ def argparser():
         "--depths", nargs='+', required=True,
         help="Depth summary files")
     parser.add_argument(
-        "--telemetry",
-        help="Workflow telemetry file")
-    parser.add_argument(
         "--fastcat_stats", required=True,
         help="fastcat summary file")
     parser.add_argument(
@@ -523,9 +400,6 @@ def argparser():
     parser.add_argument(
         "--hide_variants", action="store_true",
         help="Do not display variant summary in report.")
-    parser.add_argument(
-        "--hide_debug", action="store_true",
-        help="Do not display debugging in report.")
     parser.add_argument(
         "--revision", default='unknown',
         help="git branch/tag of the executed workflow")
