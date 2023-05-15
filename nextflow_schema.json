@@ -160,11 +160,6 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show variant information in report."
-                },
-                "report_detailed": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Show extra plots for detailed batch analysis."
                 }
             },
             "fa_icon": "fas fa-address-card",

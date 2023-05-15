@@ -185,7 +185,6 @@ process report {
     def pangolin = params.report_lineage as Boolean ? "--pangolin pangolin.csv" : ""
     def coverage = params.report_coverage as Boolean ? "" : "--hide_coverage"
     def var_summary = params.report_variant_summary as Boolean ? "" : "--hide_variants"
-    def debug = params.report_detailed as Boolean ? "" : "--hide_debug"
 
     def metadata = new JsonBuilder(metadata).toPrettyString()
     """
@@ -195,7 +194,7 @@ process report {
     workflow-glue report \
         consensus_status.txt $report_name \
         $pangolin $coverage $var_summary \
-        $nextclade $debug \
+        $nextclade \
         --nextclade_errors $nextclade_errors \
         --revision $workflow.revision \
         --commit $workflow.commitId \
