@@ -4,6 +4,7 @@
     "title": "epi2me-labs/wf-artic",
     "description": "Run the ARTIC SARS-CoV-2 methodology on multiplexed MinION, GridION, and PromethION data.",
     "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo.tar.gz",
+    "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo/aws.nextflow.config",
     "url": "https://github.com/epi2me-labs/wf-artic",
     "type": "object",
     "definitions": {
