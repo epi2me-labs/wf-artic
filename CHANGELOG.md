@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [v0.3.26]
@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `--report_detailed` was causing an error in report generation, as it requires the telemetry JSON which the workflow is no longer using. This parameter has been removed (https://github.com/epi2me-labs/wf-artic/issues/79)
+
+### Added
+- Configuration for running demo data in AWS
 
 ## [v0.3.25]
 ### Updated
@@ -25,8 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.3.23]
 ### Changed
 - medaka bumped to 1.7.2 (np-artic bump to 1.3.0_19)
+
 ### Added
 - medaka models for kit14 - R10.4.1
+
 ### Fixed
 - scheme directory bug in labs/windows (https://github.com/epi2me-labs/wf-artic/issues/73)
 
@@ -35,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - workflow-glue python psuedo package
 - pangolin to 4.2
 - nextclade to 2.11.0
+
 ### Removed
 - spike-seq primer schemes
 - telemtry generation
@@ -54,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation
 - pangolin to 4.1.3
 - nextclade to 2.8.0
+
 ### Fixed
 - Metadata map handling
 
@@ -71,12 +78,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `--pangolin_options` command line arg, use with quotes i.e.: "--analysis-mode fast"
 - NEB VarSkip V2b primer scheme added
+
 ### Changes
 - Better help text on cli
 
 ## [v0.3.15]
 ### Fixed
 - `nextflow_schema.json` default primer scheme fix
+
 ### Changes
 - New docs format
 
@@ -89,18 +98,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated primer schemes
 - Removed scheme downloading from np-artic
 - V1200 Midnight naming changed:
-  - v1 of the kit (MRT.001.10) is called Midnight-ONT/V1
-  - v2 of the kit (MRT.001.20) is called Midnight-ONT/V2
-  - v3 of the kit (MRT.001.30) is called Midnight-ONT/V3
-    - It should be noted that primer 21_RIGHT only has one record in the bed, to represent
-      the maximum possible region covered by the right primers for this amplicon
+- v1 of the kit (MRT.001.10) is called Midnight-ONT/V1
+- v2 of the kit (MRT.001.20) is called Midnight-ONT/V2
+- v3 of the kit (MRT.001.30) is called Midnight-ONT/V3
+- It should be noted that primer 21_RIGHT only has one record in the bed, to represent the maximum possible region covered by the right primers for this amplicon
 - pangolin bumped to 4.0.5
 - nextclade bumped to 1.11.0
+
 ### Added
 - Ability to specify custom primers with --custom_scheme
   - --min_len and --max_len must be specified when using this option
 - --list_schemes option that lists available schemes and quits the workflow
-
 
 ## [v0.3.12]
 ### Changes
@@ -116,6 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nextclade bump to 1.10.2
 - Nextclade data to 2022-02-07T12:00:00Z
 - Pangolin bump to 3.1.20
+
 ### Fixed
 - Pangolin build fix
 - NEB VarSkip V2 bed file now corrected
@@ -155,6 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pangolin updated to 3.1.16 (Will now call B.1.1.529 successfully)
 - Pangolin now auto updates before it runs (internet connectivity required)
 - Nextclade updated to 1.5.1
+
 ### Fixed
 - Segmentation faults in artic-tools vcfcheck code.
 
@@ -165,6 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nextclade errors output as seperate table.
 - `--report_detailed` flag to show additional coverage plots
 - Parsing of sample sheet to include a `type` column
+
 ### Changes
 - `sample_name` changed to `sample_id` throughout
 
@@ -179,18 +190,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update nextclade to c++ version 1.3.0, install via bioconda.
 - Update aplanat to v0.5.4.
+
 ### Added
 - V4.1 primer set for spike-seq.
 - Tag for pangolin image is now specified in nextflow config.
 - Integrate max_softclip_length parameter to be passed into artic minion.
 - Output artic.json.
+
 ### Fixed
 - Parsing of sample_name column from summary files during report curation.
 
 ## [v0.3.2]
 ### Changed
-- Updated `fastcat` and `aplanat` versions for standardised software version
-  reporting.
+- Updated `fastcat` and `aplanat` versions for standardised software version reporting.
+
 ### Fixed
 - Empty GVCF file not produced when ARTIC failed.
 - `conda` environment file location incorrectly specified in `nextflow.config`
@@ -198,6 +211,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.3.1]
 ### Added
 - Per-sample bam files now published to output directory.
+
 ### Changed
 - Data ingress now performed by standard module.
 
@@ -205,12 +219,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Updated medaka to v1.4.3 for model pre-download.
 - Work around issue where pyvcf writes QUAL values as '.' and not 0.
+
 ### Changed
 - Removed the autodetect sample_id option for now.
-- Updated default model to be a variant calling one. Although labelled as
-  PromethION specific (`_prom` in name), this model should be preferred
-  on all platforms of non-variant (consensus) platform specific models.
+- Updated default model to be a variant calling one. Although labelled as PromethION specific (`_prom` in name), this model should be preferred on all platforms of non-variant (consensus) platform specific models.
 - Derive software versions from CLI rather than conda list.
+
 ### Added
 - Field `alias` in sample sheet CSV serves as alternative to `sample_name`.
 - Added V4 primerscheme to data directory.
@@ -223,10 +237,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.2]
 ### Added
 - Added summary of software parameters section to report.
+
 ### Changed
-- genotype_variants option can now be used without specifying a path, falling
-  back to the scheme default, if one exists.
+- genotype_variants option can now be used without specifying a path, falling back to the scheme default, if one exists.
 - Removed vestigial spike-seq scheme versions.
+
 ### Fixed
 - Updated allVariants step to normalise REF fields to fix vcf merge issue.
 - Prevented nextclade from using all available threads.
@@ -249,6 +264,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.3]
 ### Added
 - Check format of sample sheet before executing main workflow.
+
 ### Fixed
 - Parsing of V1200 .bed file for nextclade report.
 - Empty barcode directories are ignored.
@@ -257,6 +273,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.2]
 ### Fixed
 - Recovery after `artic minion` fails.
+
 ### Added
 - Report item detailing failed analyses.
 
@@ -287,6 +304,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for fragmented amplicons.
 - Enabled use of conda profile.
+
 ### Changed
 - Use custom np-artic package based on 1.3.0-dev branch of original.
 - Use nextclade from conda package
@@ -303,20 +321,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.0.3]
 ### Changed
 - Automatically select min/max read lengths base on scheme.
-###
+### Added
 - Added command-line argument validation.
 
 ## [v0.0.2]
-
-Automation release
+* Automation release
 
 ### Added
 - Continuous deployment.
 
-
 ## [v0.0.1]
-
-Initial release
+* Initial release
 
 ### Added
 - Basic running of Artic workflow and reporting.
+
