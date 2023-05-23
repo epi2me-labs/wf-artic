@@ -37,9 +37,8 @@ process runArtic {
     label "artic"
     cpus params.artic_threads
     input:
-        tuple val(meta), path(fastq_file), path(fastq_stats)
+        tuple val(meta), path(fastq_file), path(fastq_stats), val(medaka_model)
         path scheme_dir
-        val(medaka_model)
     output:
         path "${meta.alias}.consensus.fasta", emit: consensus
         path "${meta.alias}.depth.txt", emit: depth_stats
@@ -415,7 +414,8 @@ workflow pipeline {
                 workflow_params)
             results = html_doc[0].concat(html_doc[1])
         } else {
-            artic = runArtic(samples, scheme_dir, medaka_variant_model)
+            samples_for_artic = samples.combine(medaka_variant_model)
+            artic = runArtic(samples_for_artic, scheme_dir)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
             all_consensus = allConsensus(artic.consensus.collect())
