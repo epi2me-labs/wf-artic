@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 ### Changed
 - Example command to use demo data.
-
-### Changed
 - Updated GitHub issue templates to force capture of more information.
 - Bumped minimum required Nextflow version to 22.10.8
 - Enum choices are enumerated in the `--help` output.
