@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.30]
+### Added
+- New primer schemes; ARTIC V5.3.2 and Midnight IDT V2
+### Updated
+- Nextclade & pangolin
+- For alt primers we take the largest region (Updated ARTIC code merges a canonical primer site with an alt site, producing an interval that encompasses both)
+
 ## [v0.3.29]
 ### Changed
 - Example command to use demo data.
