@@ -353,6 +353,9 @@ process pangolin {
     then
       pangolin --update
     fi
+    
+    # set cache for snakemake to prevent permission issuses
+    export XDG_CACHE_HOME=\$(pwd -P)
 
     pangolin --all-versions 2>&1 | sed 's/: /,/' > pangolin.version
     pangolin --threads ${task.cpus} $params._pangolin_options consensus.fasta
