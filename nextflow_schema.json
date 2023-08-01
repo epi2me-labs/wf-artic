@@ -219,18 +219,13 @@
                     "default": false,
                     "description": "Update pangolin & Nextclade data at runtime."
                 },
-                "pangolin_version": {
-                    "type": "string",
-                    "default": "4.2",
-                    "hidden": true
-                },
                 "pangolin_options": {
                     "type": "string",
                     "description": "Pass options to pangolin, use like this \"--analysis-mode fast --min-length 26000\"."
                 },
                 "nextclade_version": {
                     "type": "string",
-                    "default": "2.11.0",
+                    "default": "2.14.0",
                     "hidden": true
                 },
                 "nextclade_data_tag": {

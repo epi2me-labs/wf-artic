@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - New primer schemes; ARTIC V5.3.2 and Midnight IDT V2
 ### Updated
-- Nextclade & pangolin
+- Nextclade bump to 2.14.0
+- Pangolin bump to 4.3
 - For alt primers we take the largest region (Updated ARTIC code merges a canonical primer site with an alt site, producing an interval that encompasses both)
 
 ## [v0.3.29]
