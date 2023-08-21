@@ -221,7 +221,7 @@
                 },
                 "update_data": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "Update Pangolin and Nextclade data at runtime."
                 },
                 "pangolin_options": {
