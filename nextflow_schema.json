@@ -181,14 +181,14 @@
                     "type": "number",
                     "description": "Number of CPU threads to use per artic task.",
                     "help_text": "The total CPU resource used by the workflow is constrained by the executor configuration.",
-                    "min": 1,
+                    "minimum": 1,
                     "default": 4
                 },
                 "pangolin_threads": {
                     "type": "number",
                     "description": "Number of CPU threads to use per pangolin task.",
                     "help_text": "The total CPU resource used by the workflow is constrained by the executor configuration.",
-                    "min": 1,
+                    "minimum": 1,
                     "default": 4
                 },
                 "genotype_variants": {
@@ -203,15 +203,15 @@
                 "min_len": {
                     "type": "number",
                     "title": "Minimum read length",
-                    "min": 50,
-                    "max": 10000,
+                    "minimum": 50,
+                    "maximum": 10000,
                     "description": "Minimum read length (default: set by scheme)."
                 },
                 "max_len": {
                     "type": "number",
                     "title": "Maximum read length",
-                    "min": 50,
-                    "max": 10000,
+                    "minimum": 50,
+                    "maximum": 10000,
                     "description": "Maximum read length (default: set by scheme)."
                 },
                 "max_softclip_length": {
