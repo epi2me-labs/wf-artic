@@ -47,7 +47,7 @@ def output_json(df, consensus_fasta, fastcat_stats):
             newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
-    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t")
+    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t", dtype={"sample_name": "str"})
     readcounts = seq_summary['sample_name'].value_counts().to_dict()
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
