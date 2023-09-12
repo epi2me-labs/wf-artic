@@ -47,7 +47,7 @@ def output_json(df, consensus_fasta, fastcat_stats):
             newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
-    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t", dtype={"sample_name": "str"})
+    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t", dtype={"sample_name":"str"})
     readcounts = seq_summary['sample_name'].value_counts().to_dict()
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
@@ -93,7 +93,7 @@ def main(args):
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
-    seq_summary = pd.read_csv(args.fastcat_stats, delimiter="\t")
+    seq_summary = pd.read_csv(args.fastcat_stats, delimiter="\t", dtype={"sample_name":"str"})
     total_bases = seq_summary['read_length'].sum()
     mean_length = total_bases / len(seq_summary)
     median_length = np.median(seq_summary['read_length'])
