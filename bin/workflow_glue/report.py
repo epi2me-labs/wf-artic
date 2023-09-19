@@ -11,9 +11,13 @@ from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
 import numpy as np
 import pandas as pd
+from pandas.api import types as pd_types
 import pysam
 
 from .util import get_named_logger, wf_parser  # noqa: ABS101
+
+# Define categorical types
+CATEGORICAL = pd_types.CategoricalDtype(ordered=True)
 
 
 def read_files(summaries, **kwargs):
@@ -47,7 +51,11 @@ def output_json(df, consensus_fasta, fastcat_stats):
             newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
-    seq_summary = pd.read_csv(fastcat_stats, delimiter="\t")
+    seq_summary = pd.read_csv(
+        fastcat_stats,
+        delimiter="\t",
+        dtype={"sample_name": CATEGORICAL}
+        )
     readcounts = seq_summary['sample_name'].value_counts().to_dict()
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
@@ -93,7 +101,11 @@ def main(args):
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
-    seq_summary = pd.read_csv(args.fastcat_stats, delimiter="\t")
+    seq_summary = pd.read_csv(
+        args.fastcat_stats,
+        delimiter="\t",
+        dtype={"sample_name": CATEGORICAL}
+        )
     total_bases = seq_summary['read_length'].sum()
     mean_length = total_bases / len(seq_summary)
     median_length = np.median(seq_summary['read_length'])
