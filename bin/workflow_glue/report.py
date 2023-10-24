@@ -3,13 +3,13 @@
 
 import json
 
-from aplanat import annot, bars, hist, lines, report
+from aplanat import bars, lines, report
 from aplanat.components import bcfstats, nextclade
 from aplanat.components import simple as scomponents
+from aplanat.components.fastcat import read_length_plot, read_quality_plot
 from aplanat.util import Colors
 from bokeh.layouts import gridplot, layout
 from bokeh.models import Panel, Range1d, Tabs
-import numpy as np
 import pandas as pd
 from pandas.api import types as pd_types
 import pysam
@@ -28,7 +28,7 @@ def read_files(summaries, **kwargs):
     return pd.concat(dfs)
 
 
-def output_json(df, consensus_fasta, fastcat_stats):
+def output_json(df, consensus_fasta, readcounts):
     """Read depth stats df and create JSON output."""
     grouped_by_sample = df.groupby('sample_name')
     all_json = {}
@@ -51,12 +51,6 @@ def output_json(df, consensus_fasta, fastcat_stats):
             newdf[x].values.tolist() for x in newdf.columns)))
         all_json[sample] = final
     final_json = {'data': []}
-    seq_summary = pd.read_csv(
-        fastcat_stats,
-        delimiter="\t",
-        dtype={"sample_name": CATEGORICAL}
-        )
-    readcounts = seq_summary['sample_name'].value_counts().to_dict()
     # parse the consensus fasta to get extra info required
     with pysam.FastxFile(consensus_fasta) as fh:
         for entry in fh:
@@ -101,61 +95,38 @@ def main(args):
 This section displays basic QC metrics indicating read data quality.
 ''')
     # read length summary
-    seq_summary = pd.read_csv(
-        args.fastcat_stats,
-        delimiter="\t",
-        dtype={"sample_name": CATEGORICAL}
+    tabs = {}
+    sample_readcounts = {}
+    sample_goodreadcounts = {}
+    for summary_fn in args.fastcat_stats:
+        df_sample = pd.read_csv(summary_fn, sep="\t")
+        sample_id = df_sample['sample_name'].iloc[0]
+        rlp = read_length_plot(
+            df_sample,
+            min_len=args.min_len,
+            max_len=args.max_len,
+            xlim=(0, 2000),
         )
-    total_bases = seq_summary['read_length'].sum()
-    mean_length = total_bases / len(seq_summary)
-    median_length = np.median(seq_summary['read_length'])
-    datas = [seq_summary['read_length']]
-    length_hist = hist.histogram(
-        datas, colors=[Colors.cerulean], binwidth=50,
-        title="Read length distribution.",
-        x_axis_label='Read Length / bases',
-        y_axis_label='Number of reads',
-        xlim=(0, 2000))
-    length_hist = annot.marker_vline(
-        length_hist, args.min_len,
-        label="Min: {}".format(args.min_len), text_baseline='bottom',
-        color='grey')
-    length_hist = annot.marker_vline(
-        length_hist, args.max_len,
-        label="Max: {}".format(args.max_len), text_baseline='top')
-    length_hist = annot.subtitle(
-        length_hist,
-        "Mean: {:.0f}. Median: {:.0f}".format(
-            mean_length, median_length))
+        rqp = read_quality_plot(df_sample)
+        grid = gridplot(
+            [rlp, rqp], ncols=2, sizing_mode="stretch_width")
+        tabs[sample_id] = Panel(child=grid, title=sample_id)
+        # count total reads for output_json
+        sample_readcounts[sample_id] = df_sample.shape[0]
+        # count "good reads" for additional bar plot
+        good_reads = df_sample.loc[
+            (df_sample['read_length'] > args.min_len)
+            & (df_sample['read_length'] < args.max_len)
+        ]
+        sample_goodreadcounts[sample_id] = good_reads.shape[0]
 
-    datas = [seq_summary['mean_quality']]
-    mean_q, median_q = np.mean(datas[0]), np.median(datas[0])
-    q_hist = hist.histogram(
-        datas, colors=[Colors.cerulean], bins=100,
-        title="Read quality score",
-        x_axis_label="Quality score",
-        y_axis_label="Number of reads",
-        xlim=(4, 25))
-    q_hist = annot.subtitle(
-        q_hist,
-        "Mean: {:.0f}. Median: {:.0f}".format(
-            mean_q, median_q))
+    barcode_keys = sorted(sample_goodreadcounts)
 
     # barcode count plot
-    good_reads = seq_summary.loc[
-        (seq_summary['read_length'] > args.min_len)
-        & (seq_summary['read_length'] < args.max_len)]
-    barcode_counts = (
-        pd.DataFrame(good_reads['sample_name'].value_counts())
-        .sort_index()
-        .reset_index()
-        .rename(
-            columns={'index': 'sample', 'sample_name': 'count'})
-    )
-
     bc_counts = bars.simple_bar(
-        barcode_counts['sample'].astype(str), barcode_counts['count'],
-        colors=[Colors.cerulean]*len(barcode_counts),
+        barcode_keys,
+        [sample_goodreadcounts.get(x) for x in barcode_keys],
+        colors=[Colors.cerulean]*len(sample_goodreadcounts),
         title=(
             'Number of reads per barcode '
             '(filtered by {} < length < {})'.format(
@@ -163,10 +134,19 @@ This section displays basic QC metrics indicating read data quality.
         plot_width=None
     )
     bc_counts.xaxis.major_label_orientation = 3.14/2
+
+    section = report_doc.add_section()
+    section.markdown("""
+    ### Sequence summaries""")
     section.plot(
         layout(
-            [[length_hist, q_hist], [bc_counts]],
-            sizing_mode="stretch_width"))
+            [
+                Tabs(tabs=[tabs.get(x) for x in barcode_keys]),
+                [bc_counts],
+            ],
+            sizing_mode="stretch_width"
+        )
+    )
 
     section = report_doc.add_section()
     section.markdown("""
@@ -215,7 +195,7 @@ comparing depth across samples.***
         # depth summary by amplicon pool
         df = read_files(
             args.depths, sep="\t", converters={'sample_name': str})
-        epi2me_json = output_json(df, args.consensus_fasta, args.fastcat_stats)
+        epi2me_json = output_json(df, args.consensus_fasta, sample_readcounts)
         json_object = json.dumps(epi2me_json, indent=4, separators=(',', ':'))
         json_file = open("artic.json", "a")
         json_file.write(json_object)
@@ -378,7 +358,7 @@ def argparser():
         "--depths", nargs='+', required=True,
         help="Depth summary files")
     parser.add_argument(
-        "--fastcat_stats", required=True,
+        "--fastcat_stats", nargs='+', required=True,
         help="fastcat summary file")
     parser.add_argument(
         "--nextclade",

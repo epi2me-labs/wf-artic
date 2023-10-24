@@ -3,7 +3,7 @@
 import groovy.json.JsonBuilder
 nextflow.enable.dsl = 2
 
-include { fastq_ingress } from './lib/fastqingress'
+include { fastq_ingress } from './lib/ingress'
 include { nextcladeVersionChecker } from './lib/nextclade'
 
 process checkSampleSheet {
@@ -162,7 +162,7 @@ process report {
     cpus 1
     input:
         path "depth_stats/*"
-        path fastcat_stats
+        path "per_read_stats/?.gz"
         path "nextclade.json"
         path nextclade_errors
         path "pangolin.csv"
@@ -201,7 +201,7 @@ process report {
         --max_len $params._max_len \
         --report_depth $params.report_depth \
         --depths depth_stats/* \
-        --fastcat_stats $fastcat_stats \
+        --fastcat_stats per_read_stats/* \
         --bcftools_stats vcf_stats/* $genotype \
         --versions versions \
         --params params.json \
@@ -443,7 +443,7 @@ workflow pipeline {
             // report
             html_doc = report(
                 artic.depth_stats.collect(),
-                samples | map { it[2].resolve("per-read-stats.tsv") } | collectFile(keepHeader: true),
+                samples.map { it[2].resolve("per-read-stats.tsv.gz") }.toList(),
                 clades[0].collect(),
                 clades[1].collect(),
                 pangolin.out.report.collect(),
@@ -483,9 +483,7 @@ WorkflowMain.initialise(workflow, params, log)
 
 workflow {
 
-    if (params.disable_ping == false) {
-        Pinguscript.ping_post(workflow, "start", "none", params.out_dir, params)
-    }
+    Pinguscript.ping_start(nextflow, workflow, params)
 
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
@@ -641,7 +639,7 @@ workflow {
         "input":params.fastq,
         "sample":params.sample,
         "sample_sheet":params.sample_sheet,
-        "fastcat_stats": true,
+        "stats": true,
         "analyse_unclassified":params.analyse_unclassified])
 
     results = pipeline(samples, scheme_dir, params._scheme_name, params._scheme_version, reference,
@@ -649,13 +647,9 @@ workflow {
     output(results)
 }
 
-
-if (params.disable_ping == false) {
-    workflow.onComplete {
-        Pinguscript.ping_post(workflow, "end", "none", params.out_dir, params)
-    }
-
-    workflow.onError {
-        Pinguscript.ping_post(workflow, "error", "$workflow.errorMessage", params.out_dir, params)
-    }
+workflow.onComplete {
+    Pinguscript.ping_complete(nextflow, workflow, params)
+}
+workflow.onError {
+    Pinguscript.ping_error(nextflow, workflow, params)
 }
