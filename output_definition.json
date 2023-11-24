@@ -1,0 +1,76 @@
+{
+  "files": {
+    "workflow-report": {
+      "filepath": "./wf-artic-report.html",
+      "title": "Workflow report",
+      "description": "Report for all samples.",
+      "mime-type": "text/html",
+      "optional": false,
+      "type": "aggregated"
+    },
+    "consensus": {
+      "filepath": "./all_consensus.fasta",
+      "title": "Consensus sequences",
+      "description": "Final consensus sequences for all samples in the analysis.",
+      "mime-type": "text/plain",
+      "optional": false,
+      "type": "aggregated"
+    },
+    "pangolin-results": {
+      "filepath": "./lineage_report.csv",
+      "title": "Pangolin results",
+      "description": "Pangolin results for each of the samples in the analysis.",
+      "mime-type": "text/csv",
+      "optional": false,
+      "type": "aggregated"
+    },
+    "nextclade-results": {
+      "filepath": "./nextclade.json",
+      "title": "Nextclade results",
+      "description": "Nextclade results for each of the samples in the analysis.",
+      "mime-type": "application/json",
+      "optional": false,
+      "type": "aggregated"
+    },
+    "coverage": {
+      "filepath": "./all_depth.txt",
+      "title": "Coverage data",
+      "description": "Coverage of the reference genome in 20 base windows in all the samples in the analysis.",
+      "mime-type": "text/plain",
+      "optional": false,
+      "type": "aggregated"
+    },
+    "variants": {
+      "filepath": "./{{ alias }}.pass.named.vcf.gz",
+      "title": "Variants",
+      "description": "A VCF file containing high confidence variants in the sample when compared to the reference.",
+      "mime-type": "application/gzip",
+      "optional": false,
+      "type": "per-sample"
+    },
+    "variants-index": {
+      "filepath": "./{{ alias }}.pass.named.vcf.gz.tbi",
+      "title": "Variants index",
+      "description": "An index file for the variants.",
+      "mime-type": "application/octet-stream",
+      "optional": false,
+      "type": "per-sample"
+    },
+    "alignments": {
+      "filepath": "./{{ alias }}.primertrimmed.rg.sorted.bam",
+      "title": "Alignments",
+      "description": "A BAM file containing the reads for the sample aligned to the reference.",
+      "mime-type": "application/gzip",
+      "optional": false,
+      "type": "per-sample"
+    },
+    "alignments-index": {
+      "filepath": "./{{ alias }}.primertrimmed.rg.sorted.bam.bai",
+      "title": "Alignments index",
+      "description": "An index file for the alignments.",
+      "mime-type": "application/octet-stream",
+      "optional": false,
+      "type": "per-sample"
+    }
+  }
+}
