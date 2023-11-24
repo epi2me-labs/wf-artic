@@ -2,6 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
     "title": "epi2me-labs/wf-artic",
+    "workflow_title": "Artic Network SARS-CoV-2 Analysis",
     "description": "Run the ARTIC SARS-CoV-2 methodology on multiplexed MinION, GridION, and PromethION data.",
     "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo.tar.gz",
     "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo/aws.nextflow.config",
@@ -353,6 +354,18 @@
         "show_hidden_params": {
             "type": "boolean"
         }
+    },
+    "resources": {
+        "recommended": {
+            "cpus": 4,
+            "memory": "8GB"
+        },
+        "minimum": {
+            "cpus": 2,
+            "memory": "4GB"
+        },
+        "run_time": "5 minutes per sample",
+        "arm_support": false
     },
     "docs": {
         "intro": "## Introduction\n\nThe wf-artic workflow implements a slightly modified ARTIC FieldBioinformatics\nworkflow for the purpose of preparing consensus sequences from SARS-CoV-2\ngenomes that have been DNA sequenced using a pooled tiling amplicon strategy.\n\nThe workflow consumes a folder containing demultiplexed sequence reads as\nprepared by either MinKNOW or Guppy. The workflow needs to know the primer\nscheme that has been used during genome amplification and library preparation\ne.g. ARTIC/V3 or ONT_Midnight/V1. Other parameters can be specified too e.g.\nassign sample names to the barcodes or to adjust the length distribution of\nacceptable amplicon sequences. The Medaka variant model is selected based on the\nprovided basecaller configuration (using the parameter `--basecaller_cfg`), or\nalternatively the Medaka model can be provided directly via the `--medaka_variant_model`\nparameter.\n\nDNA sequences in FASTQ format are aggregated, filtered for sequence length and\nquality characteristics and are mapped to the reference SARS-CoV-2 genome using\nminimap2. A primer-scheme specific bed file is used to identify the regions of\nthe mapped sequences that correspond to synthetic sequences (primers) - these\nregions are clipped to ensure that sequences are entirely of biological origin.\nThe retained sequences are used to prepare a consensus sequence that is then\npolished using Medaka and variant calling is performed to produce a VCF file of\ngenetic differences relative to the reference genome. The consensus sequence is\nannotated for virus clade information using NextClade and a strain assignment\nis performed using Pangolin.\n\nThe completed analysis is summarised in an HTML format report that summarises\nkey information that includes number of reads, depth of coverage information\nper amplicon and both the Nextclade and Pangolin information.\n\nMore information can be found in these two blog posts:\n* [SARS-CoV-2 Midnight Analysis](https://labs.epi2me.io/sarscov2-midnight-analysis/)\n* [Midnight Scheme Update](https://labs.epi2me.io/ont-midnight-scheme-update/)\n",
