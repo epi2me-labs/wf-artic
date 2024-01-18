@@ -110,7 +110,7 @@ This section displays basic QC metrics indicating read data quality.
         rqp = read_quality_plot(df_sample)
         grid = gridplot(
             [rlp, rqp], ncols=2, sizing_mode="stretch_width")
-        tabs[sample_id] = Panel(child=grid, title=sample_id)
+        tabs[sample_id] = Panel(child=grid, title=str(sample_id))
         # count total reads for output_json
         sample_readcounts[sample_id] = df_sample.shape[0]
         # count "good reads" for additional bar plot
