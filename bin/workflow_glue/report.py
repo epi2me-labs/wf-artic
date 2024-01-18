@@ -99,7 +99,8 @@ This section displays basic QC metrics indicating read data quality.
     sample_readcounts = {}
     sample_goodreadcounts = {}
     for summary_fn in args.fastcat_stats:
-        df_sample = pd.read_csv(summary_fn, sep="\t")
+        df_sample = pd.read_csv(summary_fn, sep="\t",
+                                dtype={"sample_name":pd.api.types.CategoricalDtype(ordered=True)})
         sample_id = df_sample['sample_name'].iloc[0]
         rlp = read_length_plot(
             df_sample,
