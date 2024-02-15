@@ -325,6 +325,12 @@ process nextclade {
       nextclade dataset get --name 'sars-cov-2' --output-dir 'data/sars-cov-2' $update_tag
     fi
 
+    if [ "$params.use_latest_nextclade_v3_tree" == "true" ]
+    then
+      LATEST_TIMESTAMP=$(curl -L https://data.master.clades.nextstrain.org/v3/index.json | jq -r '.collections[].datasets[] | select(.path=="nextstrain/sars-cov-2/wuhan-hu-1/orfs").versions[] | select(.updatedAt) | .updatedAt' | head -n1)
+      curl -L https://data.clades.nextstrain.org/v3/nextstrain/sars-cov-2/wuhan-hu-1/orfs/$LATEST_TIMESTAMP/tree.json > 'data/sars-cov-2/tree.json'
+    fi
+
     nextclade_version=`nextclade --version | sed 's/^/nextclade,/'`
     echo "nextclade_data_tag,`cat $nextclade_dataset/tag.json  | grep -Po '"tag": *\\K"[^"]*"' | sed 's/\\"//g'`" >> nextclade.version
 
