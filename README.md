@@ -27,12 +27,12 @@ parameter.
 Recommended requirements:
 
 + CPUs = 4
-+ memory = 8GB
++ Memory = 8GB
 
-Minimum requirement:
+Minimum requirements:
 
 + CPUs = 2
-+ memory = 4GB
++ Memory = 4GB
 
 Approximate run time: 5 minutes per sample
 
@@ -85,7 +85,30 @@ The Midnight protocol for sample preparation and sequencing can be found in the 
 
 
 
-## Inputs
+## Input example
+
+<!---Example of input directory structure, delete and edit as appropriate per workflow.--->
+This workflow accepts FASTQ files as input.
+
+The FASTQ input parameters for this workflow accept one of three cases: (i) the path to a single FASTQ; (ii) the path to a top-level directory containing FASTQ files; (iii) the path to a directory containing one level of sub-directories which in turn contain FASTQ files. In the first and second cases (i and ii), a sample name can be supplied with `--sample`. In the last case (iii), the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`.
+
+```
+(i)                     (ii)                 (iii)    
+input_reads.fastq   ─── input_directory  ─── input_directory
+                        ├── reads0.fastq     ├── barcode01
+                        └── reads1.fastq     │   ├── reads0.fastq
+                                             │   └── reads1.fastq
+                                             ├── barcode02
+                                             │   ├── reads0.fastq
+                                             │   ├── reads1.fastq
+                                             │   └── reads2.fastq
+                                             └── barcode03
+                                              └── reads0.fastq
+```
+
+
+
+## Input parameters
 
 ### Input Options
 
@@ -113,6 +136,13 @@ The Midnight protocol for sample preparation and sequencing can be found in the 
 | sample | string | A single sample name for non-multiplexed data. Permissible if passing a single .fastq(.gz) file or directory of .fastq(.gz) files. |  |  |
 
 
+### Output Options
+
+| Nextflow parameter name  | Type | Description | Help | Default |
+|--------------------------|------|-------------|------|---------|
+| out_dir | string | Directory for output of all workflow results. |  | output |
+
+
 ### Reporting Options
 
 | Nextflow parameter name  | Type | Description | Help | Default |
@@ -137,6 +167,7 @@ The Midnight protocol for sample preparation and sequencing can be found in the 
 | max_softclip_length | integer | Remove reads with alignments showing large soft clipping |  |  |
 | update_data | boolean | Update Pangolin and Nextclade data at runtime. |  | True |
 | pangolin_options | string | Pass options to Pangolin, for example "--analysis-mode fast --min-length 26000". |  |  |
+| nextclade_data_tag | string | The tag of the nextclade data packet |  |  |
 | normalise | integer | Depth ceiling for depth of coverage normalisation |  | 200 |
 | medaka_variant_model | string | The name of a Medaka variant model to use. This name will override the model automatically chosen based on the provided basecaller configuration. | The workflow will attempt to map the basecalling model used to a suitable Medaka variant model. You can override this by providing a model with this option instead. |  |
 
@@ -156,7 +187,7 @@ The Midnight protocol for sample preparation and sequencing can be found in the 
 
 ## Outputs
 
-Outputs files may be aggregated including information for all             samples or provided per sample. Per sample files             will be prefixed with respective aliases and represented             below as {{ alias }}.
+Output files may be aggregated including information for all samples or provided per sample. Per-sample files will be prefixed with respective aliases and represented below as {{ alias }}.
 
 | Title | File path | Description | Per sample or aggregated |
 |-------|-----------|-------------|--------------------------|

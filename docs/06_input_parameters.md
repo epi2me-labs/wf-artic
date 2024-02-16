@@ -24,6 +24,13 @@
 | sample | string | A single sample name for non-multiplexed data. Permissible if passing a single .fastq(.gz) file or directory of .fastq(.gz) files. |  |  |
 
 
+### Output Options
+
+| Nextflow parameter name  | Type | Description | Help | Default |
+|--------------------------|------|-------------|------|---------|
+| out_dir | string | Directory for output of all workflow results. |  | output |
+
+
 ### Reporting Options
 
 | Nextflow parameter name  | Type | Description | Help | Default |
@@ -48,6 +55,7 @@
 | max_softclip_length | integer | Remove reads with alignments showing large soft clipping |  |  |
 | update_data | boolean | Update Pangolin and Nextclade data at runtime. |  | True |
 | pangolin_options | string | Pass options to Pangolin, for example "--analysis-mode fast --min-length 26000". |  |  |
+| nextclade_data_tag | string | The tag of the nextclade data packet |  |  |
 | normalise | integer | Depth ceiling for depth of coverage normalisation |  | 200 |
 | medaka_variant_model | string | The name of a Medaka variant model to use. This name will override the model automatically chosen based on the provided basecaller configuration. | The workflow will attempt to map the basecalling model used to a suitable Medaka variant model. You can override this by providing a model with this option instead. |  |
 

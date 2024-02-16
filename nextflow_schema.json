@@ -232,10 +232,12 @@
                 "nextclade_version": {
                     "type": "string",
                     "default": "2.14.0",
+                    "description": "The version of nextclade",
                     "hidden": true
                 },
                 "nextclade_data_tag": {
                     "type": "string",
+                    "description": "The tag of the nextclade data packet",
                     "hidden": false
                 },
                 "normalise": {
