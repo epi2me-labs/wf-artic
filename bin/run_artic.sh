@@ -53,7 +53,7 @@ artic minion --medaka --normalise ${normalise} --threads ${threads} \
     --scheme-directory ${scheme_dir} \
     --scheme-version ${scheme_version} \
     --max-softclip-length ${max_softclip_length} \
-    ${scheme_name} ${sample_name} \
+    ${scheme_name} ${sample_name} &> ${sample_name}.artic.log.txt \
     || mock_artic
 
 for vcf_set in "pass" "merged.gvcf"; do
