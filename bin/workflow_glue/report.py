@@ -286,17 +286,16 @@ comparing depth across samples.***
             section=nextclade.NextClade(args.nextclade))
         section.markdown(
             "The table shows errors, warnings or failed genes per sample:")
-        error_df = pd.read_csv(args.nextclade_errors).fillna('None')
+        error_df = pd.read_csv(args.nextclade_errors, sep=";").fillna('None')
+        error_df = error_df[
+            ['index', 'seqName', 'clade', 'failedCdses', 'warnings', 'errors']]
         error_df.rename(
             columns={
                 'seqName': 'Sample Name',
-                'failedGenes': 'failed genes'}, inplace=True)
+                'warnings': 'Warnings',
+                'errors': 'Errors',
+                'failedCdses': 'Failed CDS'}, inplace=True)
         section.table(error_df, index=False)
-        section.markdown(
-            "*Note: For targeted sequencing, such as SpikeSeq, Nextclade "
-            "may report 'Missing data' QC fails. This is expected and not "
-            "a concern provided the regions of interest are not reported "
-            "as missing.*")
 
     # Pangolin analysis
     if args.pangolin is not None:
