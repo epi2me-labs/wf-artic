@@ -1,10 +1,11 @@
 #!/usr/bin/env nextflow
 
 import groovy.json.JsonBuilder
+import java.text.SimpleDateFormat
+
 nextflow.enable.dsl = 2
 
 include { fastq_ingress } from './lib/ingress'
-include { nextcladeVersionChecker } from './lib/nextclade'
 
 process checkSampleSheet {
     label "artic"
@@ -275,27 +276,12 @@ process allVariants {
     """
 }
 
-process prep_nextclade {
-  label 'artic'
-  cpus 1
-  input:
-      file "reference.fasta"
-      file scheme_bed
-  output:
-      file "primers.csv"
-  """
-  workflow-glue scheme_to_nextclade $scheme_bed reference.fasta primers.csv
-  """
-}
 
 process nextclade {
     label "nextclade"
     cpus 1
     input:
         file "consensus.fasta"
-        file "reference.fasta"
-        file scheme_bed
-        file "primers.csv"
         path nextclade_dataset
         val nextclade_data_tag
     output:
@@ -305,6 +291,7 @@ process nextclade {
 
     script:
 
+      nextclade_dataset = "$nextclade_dataset/$nextclade_data_tag"
       update_tag = ''
       // if update_data is true then we will update nextflow on the fly and
       // use that data instead - regardless of profile - this is the SAFEST
@@ -325,16 +312,14 @@ process nextclade {
       nextclade dataset get --name 'sars-cov-2' --output-dir 'data/sars-cov-2' $update_tag
     fi
 
-    nextclade_version=`nextclade --version | sed 's/^/nextclade,/'`
-    echo "nextclade_data_tag,`cat $nextclade_dataset/tag.json  | grep -Po '"tag": *\\K"[^"]*"' | sed 's/\\"//g'`" >> nextclade.version
-
+    nextclade --version | sed 's/ /,/' > nextclade.version
+    echo "nextclade_data_tag,$nextclade_data_tag" >> nextclade.version
 
     nextclade run \
-        --input-pcr-primers primers.csv \
         --input-dataset $nextclade_dataset \
         --output-json nextclade.json \
         --jobs 1 \
-        --output-errors consensus.errors.csv \
+        --output-csv consensus.errors.csv \
         consensus.fasta
     """
 }
@@ -435,7 +420,7 @@ workflow pipeline {
             }
             // nextclade
             clades = nextclade(
-                all_consensus[0], reference, primers, prep_nextclade(reference,primers), nextclade_dataset, nextclade_data_tag)
+                all_consensus[0], nextclade_dataset, nextclade_data_tag)
             // pangolin
             pangolin(all_consensus[0])
             software_versions = software_versions.mix(pangolin.out.version,nextclade.out.version)
@@ -617,8 +602,14 @@ workflow {
     // if the user specifies --nextcalde_data_tag and --update_data - that tag will be pulled a fresh and used
 
     nextclade_data_tag = params.nextclade_data_tag
-    // get the compatible data tag
-    (nextclade_data_tag,nextclade_dataset) = nextcladeVersionChecker(nextclade_data_tag)
+    // get the latest data tag    
+    tagged_dirs = file(projectDir.resolve("./data/nextclade/datasets/sarscov2/*"), type: 'dir', maxdepth: 1)
+    def tag_list = []
+    date_parse = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'");
+    tagged_dirs.each { val -> tag_list << date_parse.parse(val.getBaseName()) }
+    nextclade_data_tag = Collections.max(tag_list).format("yyyy-MM-dd'T'HH-mm-ss'Z'")
+    nextclade_dataset = file(projectDir.resolve("./data/nextclade/datasets/sarscov2"), type: 'dir', checkIfExists:true)
+
 
 
     // check genotype variants
