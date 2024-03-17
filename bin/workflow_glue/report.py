@@ -99,7 +99,8 @@ This section displays basic QC metrics indicating read data quality.
     sample_readcounts = {}
     sample_goodreadcounts = {}
     for summary_fn in args.fastcat_stats:
-        df_sample = pd.read_csv(summary_fn, sep="\t")
+        df_sample = pd.read_csv(summary_fn, sep="\t",
+                                dtype={"sample_name":pd.api.types.CategoricalDtype(ordered=True)})
         sample_id = df_sample['sample_name'].iloc[0]
         rlp = read_length_plot(
             df_sample,
@@ -110,7 +111,7 @@ This section displays basic QC metrics indicating read data quality.
         rqp = read_quality_plot(df_sample)
         grid = gridplot(
             [rlp, rqp], ncols=2, sizing_mode="stretch_width")
-        tabs[sample_id] = Panel(child=grid, title=sample_id)
+        tabs[sample_id] = Panel(child=grid, title=str(sample_id))
         # count total reads for output_json
         sample_readcounts[sample_id] = df_sample.shape[0]
         # count "good reads" for additional bar plot
