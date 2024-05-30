@@ -631,11 +631,12 @@ workflow {
         "sample":params.sample,
         "sample_sheet":params.sample_sheet,
         "stats": true,
+        "per_read_stats": true,
         "analyse_unclassified":params.analyse_unclassified])
 
     results = pipeline(samples, scheme_dir, params._scheme_name, params._scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)
-    output(results)
+        | output
 }
 
 workflow.onComplete {
