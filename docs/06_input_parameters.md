@@ -66,6 +66,5 @@
 |--------------------------|------|-------------|------|---------|
 | lab_id | string | Laboratory identifier, used in reporting. |  |  |
 | testkit | string | Test kit identifier, used in reporting. |  |  |
-| disable_ping | boolean | Enable to prevent sending a workflow ping. |  | False |
 
 
