@@ -44,6 +44,7 @@ process runArtic {
         path "${meta.alias}.consensus.fasta", emit: consensus
         path "${meta.alias}.depth.txt", emit: depth_stats
         path "${meta.alias}.pass.named.stats", emit: vcf_stats
+        path "${meta.alias}.artic.log.txt", emit: artic_log
         tuple(
             val(meta.alias),
             path("${meta.alias}.pass.named.vcf.gz"),
@@ -68,7 +69,8 @@ process runArtic {
     run_artic.sh \
         ${meta.alias} ${fastq_file} ${params._min_len} ${params._max_len} \
         ${medaka_model} ${params._scheme_name} ${scheme_dir} \
-        ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise}
+        ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise} \
+        > ${meta.alias}.artic.log.txt 2>&1
     bcftools stats ${meta.alias}.pass.named.vcf.gz > ${meta.alias}.pass.named.stats
     """
 }
@@ -447,6 +449,7 @@ workflow pipeline {
                 clades[0],
                 artic.primertrimmed_bam.flatMap { it -> [ it[1], it[2] ] },
                 artic.pass_vcf.flatMap { it -> [ it[1], it[2] ] },
+                artic.artic_log,
                 html_doc[0],
                 html_doc[1],
                 combined_genotype_summary,
