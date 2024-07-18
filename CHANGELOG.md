@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logging to file for artic commands (`{barcode}.artic.log.txt`)
 ### Removed
 - Unused `nextclade_version` parameter
+### Changed
+- Reconciled workflow with wf-template v5.2.1
 
 ## [v1.1.0]
 ### Updated
