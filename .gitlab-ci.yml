@@ -16,13 +16,13 @@ docker-run:
     parallel:
         matrix:
             - MATRIX_NAME: [
-                # "Midnight-ONT/V1",
-                # "Midnight-ONT/V2",
-                # "ARTIC/V4.1",
-                # "ARTIC/V5.3.2",
-                # "Midnight-IDT/V2",
-                # "NEB-VarSkip/v2",
-                # "no-basecall-model",
+                "Midnight-ONT/V1",
+                "Midnight-ONT/V2",
+                "ARTIC/V4.1",
+                "ARTIC/V5.3.2",
+                "Midnight-IDT/V2",
+                "NEB-VarSkip/v2",
+                "no-basecall-model",
                 "no-basecall-model-override-basecaller-cfg",
             ]
     rules:
@@ -48,11 +48,11 @@ docker-run:
               NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
         - if: $MATRIX_NAME == "no-basecall-model"
           variables:
-            NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
+            NF_WORKFLOW_OPTS: "--fastq test_data/fastq-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
             ASSERT_NEXTFLOW_FAILURE: 1
             ASSERT_NEXTFLOW_FAILURE_REXP: Found no basecall model information in the input data for sample .*\. Please provide it with the `--override_basecaller_cfg` parameter.
         - if: $MATRIX_NAME == "no-basecall-model-override-basecaller-cfg"
           variables:
-            NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2 --override_basecaller_cfg dna_r9.4.1_e8_hac@v3.3"
+            NF_WORKFLOW_OPTS: "--fastq test_data/fastq-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2 --override_basecaller_cfg dna_r9.4.1_e8_hac@v3.3"
             # the wf won't fail if artic fails; make sure we got a status of `1` in the consensus status file
-            AFTER_NEXTFLOW_CMD: awk '$$1 == "barcode01-no-basecall-model" {if ($$2 != 1) exit 1}' $$PWD/$$CI_PROJECT_NAME/consensus_status.txt
+            AFTER_NEXTFLOW_CMD: awk '$$1 == "barcode01" {if ($$2 != 1) exit 1}' $$PWD/$$CI_PROJECT_NAME/consensus_status.txt
