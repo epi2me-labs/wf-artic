@@ -4,7 +4,6 @@
 |--------------------------|------|-------------|------|---------|
 | fastq | string | FASTQ files to use in the analysis. | This accepts one of three cases: (i) the path to a single FASTQ file; (ii) the path to a top-level directory containing FASTQ files; (iii) the path to a directory containing one level of sub-directories which in turn contain FASTQ files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`. |  |
 | analyse_unclassified | boolean | Analyse unclassified reads from input directory. By default the workflow will not process reads in the unclassified directory. | If selected and if the input is a multiplex directory the workflow will also process the unclassified directory. | False |
-| basecaller_cfg | string | Name of the model that was used to basecall signal data, used to select an appropriate Medaka model. | The basecaller configuration is used to automatically select the appropriate Medaka model. The automatic selection can be overridden with the 'medaka_variant_model' and 'medaka_consensus_model' parameters. The model list only shows models that are compatible with this workflow. | dna_r9.4.1_450bps_hac |
 
 
 ### Primer Scheme Selection
@@ -57,7 +56,7 @@
 | pangolin_options | string | Pass options to Pangolin, for example "--analysis-mode fast --min-length 26000". |  |  |
 | nextclade_data_tag | string | The tag of the nextclade data packet |  |  |
 | normalise | integer | Depth ceiling for depth of coverage normalisation |  | 200 |
-| medaka_variant_model | string | The name of a Medaka variant model to use. This name will override the model automatically chosen based on the provided basecaller configuration. | The workflow will attempt to map the basecalling model used to a suitable Medaka variant model. You can override this by providing a model with this option instead. |  |
+| override_basecaller_cfg | string | Override auto-detected basecaller model that processed the signal data; used to select an appropriate Medaka model. | Per default, the workflow tries to determine the basecall model from the input data. This parameter can be used to override the detected value (or to provide a model name if none was found in the inputs). However, users should only do this if they know for certain which model was used as selecting the wrong option might give sub-optimal results. A list of recent models can be found here: https://github.com/nanoporetech/dorado#DNA-models. |  |
 
 
 ### Miscellaneous Options
