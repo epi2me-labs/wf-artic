@@ -19,26 +19,12 @@ process checkSampleSheet {
     """
 }
 
-process lookup_medaka_variant_model {
-    label "artic"
-    input:
-        path("lookup_table")
-        val basecall_model
-    output:
-        stdout
-    shell:
-    '''
-    medaka_model=$(workflow-glue resolve_medaka_model lookup_table '!{basecall_model}' "medaka_variant")
-    echo -n $medaka_model
-    '''
-}
-
 
 process runArtic {
     label "artic"
     cpus params.artic_threads
     input:
-        tuple val(meta), path(fastq_file), path(fastq_stats), val(medaka_model)
+        tuple val(meta), path(fastq_file), path(fastq_stats)
         path scheme_dir
     output:
         path "${meta.alias}.consensus.fasta", emit: consensus
@@ -65,10 +51,21 @@ process runArtic {
             path("${meta.alias}.trimmed.rg.sorted.bam"),
             path("${meta.alias}.trimmed.rg.sorted.bam.bai"),
             emit: trimmed_bam)
+    script:
+    // we use `params.override_basecaller_cfg` if present; otherwise use
+    // `meta.basecall_models[0]` (there should only be one value in the list because
+    // we're running ingress with `allow_multiple_basecall_models: false`; note that
+    // `[0]` on an empty list returns `null`)
+    String basecall_model = params.override_basecaller_cfg ?: meta.basecall_models[0]
+    if (!basecall_model) {
+        error "Found no basecall model information in the input data for " + \
+            "sample '$meta.alias'. Please provide it with the " + \
+            "`--override_basecaller_cfg` parameter."
+    }
     """
     run_artic.sh \
         ${meta.alias} ${fastq_file} ${params._min_len} ${params._max_len} \
-        ${medaka_model} ${params._scheme_name} ${scheme_dir} \
+        ${basecall_model}:consensus ${params._scheme_name} ${scheme_dir} \
         ${params._scheme_version} ${task.cpus} ${params._max_softclip_length} ${params.normalise} \
         > ${meta.alias}.artic.log.txt 2>&1
     bcftools stats ${meta.alias}.pass.named.vcf.gz > ${meta.alias}.pass.named.stats
@@ -386,16 +383,6 @@ workflow pipeline {
         workflow_params = getParams()
         combined_genotype_summary = Channel.empty()
 
-        // get the medaka model from basecalling model, or override with params.medaka_variant_model
-        if(params.medaka_variant_model) {
-            log.warn "Overriding Medaka Variant model with ${params.medaka_variant_model}."
-            medaka_variant_model = Channel.fromList([params.medaka_variant_model])
-        }
-        else {
-            lookup_table = Channel.fromPath("${projectDir}/data/medaka_models.tsv", checkIfExists: true)
-            medaka_variant_model = lookup_medaka_variant_model(lookup_table, params.basecaller_cfg)
-        }
-
         if ((samples.getClass() == String) && (samples.startsWith("Error"))){
             samples = channel.of(samples)
             html_doc = report_no_data(
@@ -404,8 +391,17 @@ workflow pipeline {
                 workflow_params)
             results = html_doc[0].concat(html_doc[1])
         } else {
-            samples_for_artic = samples.combine(medaka_variant_model)
-            artic = runArtic(samples_for_artic, scheme_dir)
+            // remove samples that only appeared in the sample sheet but didn't have any
+            // reads
+            samples = samples
+            | map { meta, reads, stats ->
+                if (!reads) {
+                    log.warn "No input data found for sample '$meta.alias'; skipping..."
+                } else {
+                    [meta, reads, stats]
+                }
+            }
+            artic = runArtic(samples, scheme_dir)
             all_depth = combineDepth(artic.depth_stats.collect())
             // collate consensus and variants
             all_consensus = allConsensus(artic.consensus.collect())
@@ -635,7 +631,9 @@ workflow {
         "sample_sheet":params.sample_sheet,
         "stats": true,
         "per_read_stats": true,
-        "analyse_unclassified":params.analyse_unclassified])
+        "analyse_unclassified":params.analyse_unclassified,
+        "allow_multiple_basecall_models":false,
+    ])
 
     results = pipeline(samples, scheme_dir, params._scheme_name, params._scheme_version, reference,
         primers, ref_variants, nextclade_dataset, nextclade_data_tag)

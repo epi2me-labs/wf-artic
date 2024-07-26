@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Logging to file for artic commands (`{barcode}.artic.log.txt`)
+- `--override_basecaller_cfg` parameter for cases where automatic basecall model detection fails or users wish to override the automatic choice
 ### Removed
 - Unused `nextclade_version` parameter
+- The `--medaka_variant_model` parameter as the appropriate Medaka model is now automatically determined from the input data
+- The now redundant `--basecaller_cfg` parameter as its value is now automatically detected from the input data on a per-sample basis
 ### Changed
 - Reconciled workflow with wf-template v5.2.1
+- Updated Medaka to v1.12.1
 
 ## [v1.1.0]
 ### Updated

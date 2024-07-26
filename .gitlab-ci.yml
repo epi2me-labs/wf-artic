@@ -3,7 +3,7 @@ include:
       file: "wf-containers.yaml"
 
 variables:
-    NF_WORKFLOW_OPTS: "--fastq test_data/fastq --samples test_data/sample_sheet.csv"
+    NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv"
     NF_IGNORE_PROCESSES: "checkSampleSheet,combineGenotypeSummaries,genotypeSummary,report_no_data"
     CI_FLAVOUR: "new"
 
@@ -15,25 +15,44 @@ docker-run:
           - ${CI_PROJECT_NAME}/workspace/**/*
     parallel:
         matrix:
-            - MATRIX_NAME: ["Midnight-ONT/V1", "Midnight-ONT/V2", "ARTIC/V4.1", "ARTIC/V5.3.2", "Midnight-IDT/V2", "NEB-VarSkip/v2"]
+            - MATRIX_NAME: [
+                # "Midnight-ONT/V1",
+                # "Midnight-ONT/V2",
+                # "ARTIC/V4.1",
+                # "ARTIC/V5.3.2",
+                # "Midnight-IDT/V2",
+                # "NEB-VarSkip/v2",
+                # "no-basecall-model",
+                "no-basecall-model-override-basecaller-cfg",
+            ]
     rules:
         - if: ($CI_COMMIT_BRANCH == null || $CI_COMMIT_BRANCH == "dev-template")
           when: never
         - if: $MATRIX_NAME == "Midnight-ONT/V1"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-ONT/V1"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-ONT/V1"
         - if: $MATRIX_NAME == "Midnight-ONT/V2"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-ONT/V2"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-ONT/V2"
         - if: $MATRIX_NAME == "ARTIC/V4.1"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version ARTIC/V4.1"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version ARTIC/V4.1"
         - if: $MATRIX_NAME == "ARTIC/V5.3.2"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version ARTIC/V5.3.2"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version ARTIC/V5.3.2"
         - if: $MATRIX_NAME == "Midnight-IDT/V2"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-IDT/V2"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version Midnight-IDT/V2"
         - if: $MATRIX_NAME == "NEB-VarSkip/v2"
           variables:
-              NF_WORKFLOW_OPTS: " --fastq test_data/fastq --samples test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
+              NF_WORKFLOW_OPTS: "--fastq test_data/fastq --sample_sheet test_data/sample_sheet.csv --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
+        - if: $MATRIX_NAME == "no-basecall-model"
+          variables:
+            NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2"
+            ASSERT_NEXTFLOW_FAILURE: 1
+            ASSERT_NEXTFLOW_FAILURE_REXP: Found no basecall model information in the input data for sample .*\. Please provide it with the `--override_basecaller_cfg` parameter.
+        - if: $MATRIX_NAME == "no-basecall-model-override-basecaller-cfg"
+          variables:
+            NF_WORKFLOW_OPTS: "--fastq test_data/fastq/barcode01-no-basecall-model --scheme_name SARS-CoV-2 --scheme_version NEB-VarSkip/v2 --override_basecaller_cfg dna_r9.4.1_e8_hac@v3.3"
+            # the wf won't fail if artic fails; make sure we got a status of `1` in the consensus status file
+            AFTER_NEXTFLOW_CMD: awk '$$1 == "barcode01-no-basecall-model" {if ($$2 != 1) exit 1}' $$PWD/$$CI_PROJECT_NAME/consensus_status.txt
