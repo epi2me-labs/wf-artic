@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.2.0]
 ### Added
 - Logging to file for artic commands (`{barcode}.artic.log.txt`)
 - `--override_basecaller_cfg` parameter for cases where automatic basecall model detection fails or users wish to override the automatic choice
