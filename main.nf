@@ -395,7 +395,7 @@ workflow pipeline {
             // reads
             samples = samples
             | map { meta, reads, stats ->
-                if (!reads) {
+                if (meta.n_seqs == 0 || !meta.n_seqs) {
                     log.warn "No input data found for sample '$meta.alias'; skipping..."
                 } else {
                     [meta, reads, stats]
