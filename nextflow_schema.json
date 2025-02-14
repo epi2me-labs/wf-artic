@@ -3,7 +3,7 @@
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
     "title": "epi2me-labs/wf-artic",
     "workflow_title": "Artic Network SARS-CoV-2 Analysis",
-    "description": "Run the ARTIC SARS-CoV-2 methodology on multiplexed MinION, GridION, and PromethION data.",
+    "description": "Run the ARTIC SARS-CoV-2 methodology.",
     "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo.tar.gz",
     "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-artic/wf-artic-demo/aws.nextflow.config",
     "url": "https://github.com/epi2me-labs/wf-artic",
