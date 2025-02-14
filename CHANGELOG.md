@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- Reconciled workflow with wf-template v5.3.3
+- Reconciled workflow with wf-template v5.3.4
 ### Fixed
 - Workflow completes when a sample has no reads
 
